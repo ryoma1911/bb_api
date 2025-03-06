@@ -1,0 +1,22 @@
+# docker-composeのバージョンを指定
+version: "3.9"
+
+# baseball_reportのコンテナを作成
+services:
+  app:
+    container_name: baseball_api
+    build: 
+      context: .
+      dockerfile: container/Dockerfile
+    volumes:
+      - .:/code
+    ports:
+      - "70:70"
+    tty: true
+    stdin_open: true
+    # コンテナが正常に起動されているまで待機
+    depends_on:
+      app:
+        condition: service_healthy
+    # コンテナ正常起動後、entrypoint.shを実行する
+    command: ["sh", "-c", "/entrypoint.sh"]

@@ -1,0 +1,6 @@
+go.mod
+go.sum
+test.http
+api_test.go
+scrape_test.go
+scrape.go
