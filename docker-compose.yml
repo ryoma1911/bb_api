@@ -11,7 +11,7 @@ services:
     volumes:
       - .:/code
     ports:
-      - "70:70"
+      - "8080:8080"
     # コンテナ正常起動後、entrypoint.shを実行する
     #command: ["sh", "-c", "/entrypoint.sh"]
     tty: true
