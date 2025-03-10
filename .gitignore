@@ -4,3 +4,4 @@ test.http
 api-test.go
 scrape-test.go
 scrape.go
+.vscode

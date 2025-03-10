@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-
 	"github.com/PuerkitoBio/goquery"
 )
 
@@ -30,7 +29,7 @@ func getBody(res *http.Response) (*goquery.Document, error) {
 
 func main() {
 	// 野球速報サイトのURL
-	url := "https://baseball.yahoo.co.jp/npb/schedule/"
+	url := "https://baseball.yahoo.co.jp/npb/schedule"
 
 	// URLからレスポンスを取得
 	res, err := getURL(url)
@@ -46,22 +45,28 @@ func main() {
 
 	// 各リーグのスコア要素を取得
 	doc.Find(".bb-score").Each(func(index int, param *goquery.Selection) {
-		// リーグ名を取得
-		header := strings.TrimSpace(param.Find(".bb-score__title").Text())
-		fmt.Println("league:", header)
+		//試合がない場合はno card todayを返す
+		if param.Find(".bb-noData").Text() == "" {
 
-		// リーグ内の各試合情報を取得
-		param.Find(".bb-score__item").Each(func(count int, card *goquery.Selection) {
-			home := strings.TrimSpace(card.Find("[class*='bb-score__homeLogo']").Text())
-			away := strings.TrimSpace(card.Find("[class*='bb-score__awayLogo']").Text())
-			stadium := strings.TrimSpace(card.Find(".bb-score__venue").Text())
-			status := strings.TrimSpace(card.Find(".bb-score__status").Text())
-			starttime := strings.TrimSpace(card.Find(".bb-score__link").Text())
-			fmt.Println("home:", home)
-			fmt.Println("away:", away)
-			fmt.Println("stadium:", stadium)
-			fmt.Println("status:", status)
-			fmt.Println("start:", starttime)
-		})
+			// リーグ名を取得
+			header := strings.TrimSpace(param.Find(".bb-score__title").Text())
+			fmt.Println("league:", header)
+
+			// リーグ内の各試合情報を取得
+			param.Find(".bb-score__item").Each(func(count int, card *goquery.Selection) {
+				home := strings.TrimSpace(card.Find("[class*='bb-score__homeLogo']").Text())
+				away := strings.TrimSpace(card.Find("[class*='bb-score__awayLogo']").Text())
+				stadium := strings.TrimSpace(card.Find(".bb-score__venue").Text())
+				status := strings.TrimSpace(card.Find(".bb-score__status").Text())
+				starttime := strings.TrimSpace(card.Find(".bb-score__link").Text())
+				fmt.Println("home:", home)
+				fmt.Println("away:", away)
+				fmt.Println("stadium:", stadium)
+				fmt.Println("status:", status)
+				fmt.Println("start:", starttime)
+			})
+		}else {
+			fmt.Println("No Card Today")
+		}
 	})
 }
