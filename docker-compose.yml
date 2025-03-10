@@ -3,11 +3,33 @@ version: "3.9"
 
 # baseball_reportのコンテナを作成
 services:
+
+  db:
+    container_name: bb_db
+    build:
+      context: .
+      dockerfile: containers/mysql/Dockerfile
+    volumes:
+      - db_data:/var/lib/mysql
+    env_file:
+      - .env
+    # DBのコンテナのヘルスチェックを行う
+    # mysqladmin(MySQLサーバーの管理を行うクライアントを使ってDBコンテナ自身(127.0.0.1)にpingを送ってヘルスチェックを行う
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -u$$MYSQL_USER -p$$MYSQL_PASSWORD
+      # ヘルスチェックのインターバルは10秒
+      interval: 10s
+      # タイムアウト時間は10秒
+      timeout: 10s
+      # リトライ回数は3回
+      retries: 3
+      # ヘルスチェックが失敗しても無視する時間は30秒
+      start_period: 30s
   app:
     container_name: bb_api
     build: 
       context: .
-      dockerfile: container/Dockerfile
+      dockerfile: containers/go/Dockerfile
     volumes:
       - .:/code
     ports:
@@ -16,3 +38,10 @@ services:
     #command: ["sh", "-c", "/entrypoint.sh"]
     tty: true
     stdin_open: true
+    depends_on:
+      db:
+        # dbのヘルスチェックが終わってからappを起動させる
+        condition: service_healthy
+
+volumes:
+  db_data:
