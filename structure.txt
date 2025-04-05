@@ -1,0 +1,38 @@
+.
+├── README.md
+├── cmd
+├── containers
+│   ├── go
+│   │   └── Dockerfile
+│   └── mysql
+│       ├── Dockerfile
+│       ├── init.sql
+│       └── my.cnf
+├── docker-compose.yml
+├── entrypoint.sh
+├── go.mod
+├── go.sum
+├── internal
+│   ├── api
+│   │   └── api.go
+│   ├── config
+│   │   ├── db.go //DB接続関数
+│   │   └── db_test.go
+│   ├── fetcher
+│   │   ├── get_match_schedules.go //試合情報スクレイピング関数
+│   │   ├── get_match_schedules_test.go
+│   │   ├── get_match_score.go //試合進捗スクレイピング関数
+│   │   └── get_match_score_test.go
+│   ├── models
+│   │   ├── create_games.sql //gamesテーブルの初期設定で使用
+│   │   ├── logger
+│   │   └── update_games.sql
+│   └── repository
+│       ├── matches.go //テーブル取得,登録関数
+│       └── matches_test.go
+├── structure.txt
+└── utils
+    ├── scraper.go //スクレイピング用の関数
+    └── scraper_test.go
+
+13 directories, 23 files

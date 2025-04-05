@@ -8,3 +8,5 @@ COPY entrypoint.sh /entrypoint.sh
 
 #entrypoint.shに実行権限を付与
 RUN chmod +x entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
