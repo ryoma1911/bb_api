@@ -1,6 +1,8 @@
 .
 ├── README.md
 ├── cmd
+│   ├── main.go
+│   └── main_test.go
 ├── containers
 │   ├── go
 │   │   └── Dockerfile
@@ -14,25 +16,33 @@
 ├── go.sum
 ├── internal
 │   ├── api
-│   │   └── api.go
+│   │   ├── api_test.go
+│   │   ├── games.go
+│   │   └── router.go
+│   ├── cache
 │   ├── config
-│   │   ├── db.go //DB接続関数
+│   │   ├── db.go
 │   │   └── db_test.go
 │   ├── fetcher
-│   │   ├── get_match_schedules.go //試合情報スクレイピング関数
+│   │   ├── get_match_schedules.go
 │   │   ├── get_match_schedules_test.go
-│   │   ├── get_match_score.go //試合進捗スクレイピング関数
+│   │   ├── get_match_score.go
 │   │   └── get_match_score_test.go
+│   ├── logger
 │   ├── models
-│   │   ├── create_games.sql //gamesテーブルの初期設定で使用
-│   │   ├── logger
+│   │   ├── create_games.sql
 │   │   └── update_games.sql
-│   └── repository
-│       ├── matches.go //テーブル取得,登録関数
-│       └── matches_test.go
+│   ├── repository
+│   │   ├── matches.go
+│   │   └── matches_test.go
+│   └── scheduler
+│       ├── daily_fetch.go
+│       └── scheduler_test.go
 ├── structure.txt
 └── utils
-    ├── scraper.go //スクレイピング用の関数
+    ├── json.go
+    ├── json_test.go
+    ├── scraper.go
     └── scraper_test.go
 
-13 directories, 23 files
+15 directories, 31 files

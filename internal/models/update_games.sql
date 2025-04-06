@@ -1,1 +1,2 @@
-ALTER TABLE games ADD reague VARCHAR(50) NOT NULL
+DROP TABLE games;
+DROP TABLE matches;

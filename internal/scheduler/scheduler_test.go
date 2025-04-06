@@ -61,30 +61,6 @@ func (m *MockURLHandler) GetBody(res *http.Response) (*goquery.Document, error) 
 func TestStartDailyFetch_Success(t *testing.T) {
 	todate := time.Now().Format("2006/01/02")
 	query := "INSERT INTO matches (id, date, home, away, league, stadium, starttime, status, link) values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-	html1league2games := `
-    <div class="bb-score">
-        <h2 class="bb-score__title">Interleague</h2>
-        <div class="bb-score__item">
-            <div class="bb-score__homeLogo">Lions</div>
-            <div class="bb-score__awayLogo">Giants</div>
-            <div class="bb-score__venue">beruna</div>
-            <div class="bb-score__status">試合前</div>
-            <div class="bb-score__link">12:00</div>
-            <div class="bb-score__content" href="test1/index"></div>
-        </div>
-        <div class="bb-score__item">
-            <div class="bb-score__homeLogo">Fighters</div>
-            <div class="bb-score__awayLogo">Hawks</div>
-            <div class="bb-score__venue">escon</div>
-            <div class="bb-score__status">試合前</div>
-            <div class="bb-score__link">18:00</div>
-            <div class="bb-score__content" href="test2/index"></div>
-        </div>
-    </div>`
-	htmlnogame := `
-	<div class="bb-score">
-		<div class="bb-noData">今日は試合がありません。</div>
-	</div>`
 	// ログ出力のキャプチャ
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
@@ -101,7 +77,26 @@ func TestStartDailyFetch_Success(t *testing.T) {
 				}, nil
 			},
 			MockGetBody: func(res *http.Response) (*goquery.Document, error) {
-				doc, _ := goquery.NewDocumentFromReader(strings.NewReader(html1league2games))
+				doc, _ := goquery.NewDocumentFromReader(strings.NewReader(`
+				<div class="bb-score">
+					<h2 class="bb-score__title">Interleague</h2>
+					<div class="bb-score__item">
+						<div class="bb-score__homeLogo">Lions</div>
+						<div class="bb-score__awayLogo">Giants</div>
+						<div class="bb-score__venue">beruna</div>
+						<div class="bb-score__status">試合前</div>
+						<div class="bb-score__link">12:00</div>
+						<div class="bb-score__content" href="test1/index"></div>
+					</div>
+					<div class="bb-score__item">
+						<div class="bb-score__homeLogo">Fighters</div>
+						<div class="bb-score__awayLogo">Hawks</div>
+						<div class="bb-score__venue">escon</div>
+						<div class="bb-score__status">試合前</div>
+						<div class="bb-score__link">18:00</div>
+						<div class="bb-score__content" href="test2/index"></div>
+					</div>
+				</div>`))
 				return doc, nil
 			},
 		}
@@ -142,7 +137,26 @@ func TestStartDailyFetch_Success(t *testing.T) {
 			{todate, "Lions", "Giants", "beruna", "12:00", "試合前", "test1/score", "Interleague"},
 			{todate, "Fighters", "Hawks", "escon", "18:00", "試合前", "test2/score", "Interleague"},
 		}
-		htmlDoc, _ := goquery.NewDocumentFromReader(strings.NewReader(html1league2games))
+		htmlDoc, _ := goquery.NewDocumentFromReader(strings.NewReader(`
+		<div class="bb-score">
+			<h2 class="bb-score__title">Interleague</h2>
+			<div class="bb-score__item">
+				<div class="bb-score__homeLogo">Lions</div>
+				<div class="bb-score__awayLogo">Giants</div>
+				<div class="bb-score__venue">beruna</div>
+				<div class="bb-score__status">試合前</div>
+				<div class="bb-score__link">12:00</div>
+				<div class="bb-score__content" href="test1/index"></div>
+			</div>
+			<div class="bb-score__item">
+				<div class="bb-score__homeLogo">Fighters</div>
+				<div class="bb-score__awayLogo">Hawks</div>
+				<div class="bb-score__venue">escon</div>
+				<div class="bb-score__status">試合前</div>
+				<div class="bb-score__link">18:00</div>
+				<div class="bb-score__content" href="test2/index"></div>
+			</div>
+		</div>`))
 		actualMatches, err := fetcher.GetMatchSchedule(htmlDoc)
 
 		assert.NoError(t, err)
@@ -162,7 +176,10 @@ func TestStartDailyFetch_Success(t *testing.T) {
 				}, nil
 			},
 			MockGetBody: func(res *http.Response) (*goquery.Document, error) {
-				doc, _ := goquery.NewDocumentFromReader(strings.NewReader(htmlnogame))
+				doc, _ := goquery.NewDocumentFromReader(strings.NewReader(`
+				<div class="bb-score">
+					<div class="bb-noData">今日は試合がありません。</div>
+				</div>`))
 				return doc, nil
 			},
 		}
@@ -185,7 +202,6 @@ func TestStartDailyFetch_Success(t *testing.T) {
 
 }
 
-// エラー系のテスト
 // エラー系のテスト
 func TestStartDailyFetch_Errors(t *testing.T) {
 	query := "INSERT INTO matches (date, home, away, stadium, status, starttime, link, league) values (?, ?, ?, ?, ?, ?, ?, ?)"
@@ -289,4 +305,8 @@ func TestStartDailyFetch_Errors(t *testing.T) {
 
 		assert.Contains(t, buf.String(), "failed to insert:")
 	})
+}
+
+func TestStartDailyFetch(t *testing.T) {
+	GetMatchScheduletoday()
 }

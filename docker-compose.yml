@@ -38,6 +38,8 @@ services:
       db:
         # dbのヘルスチェックが終わってからappを起動させる
         condition: service_healthy
+    environment:
+      - TZ=Asia/Tokyo
 
 volumes:
   db_data:
