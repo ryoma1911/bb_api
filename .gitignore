@@ -6,3 +6,4 @@ scrape-test.go
 scrape.go
 .vscode
 .env
+rest.http
