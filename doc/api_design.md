@@ -71,8 +71,8 @@
 {
     {
       "id": 1,
-      "homescore": "",
-      "awayscore": "",
+      "homescore": "5",
+      "awayscore": "3",
       "batter": "",
       "inning": "試合終了",
       "result": ""
