@@ -18,8 +18,6 @@ func TestConvertToJSON(t *testing.T) {
 				"league":    "セ・リーグ",
 				"stadium":   "Yankee Stadium",
 				"starttime": "19:00",
-				"status":    "Scheduled",
-				"link":      "https://example.com/match/1",
 			},
 			{
 				"id":        2,
@@ -29,8 +27,6 @@ func TestConvertToJSON(t *testing.T) {
 				"league":    "セ・リーグ",
 				"stadium":   "Dodger Stadium",
 				"starttime": "18:30",
-				"status":    "Scheduled",
-				"link":      "https://example.com/match/2",
 			},
 		}
 
@@ -45,8 +41,6 @@ func TestConvertToJSON(t *testing.T) {
 					"league":    "セ・リーグ",
 					"stadium":   "Yankee Stadium",
 					"starttime": "19:00",
-					"status":    "Scheduled",
-					"link":      "https://example.com/match/1",
 				},
 				{
 					"id":        2,
@@ -56,8 +50,6 @@ func TestConvertToJSON(t *testing.T) {
 					"league":    "セ・リーグ",
 					"stadium":   "Dodger Stadium",
 					"starttime": "18:30",
-					"status":    "Scheduled",
-					"link":      "https://example.com/match/2",
 				},
 			},
 		}
@@ -81,8 +73,6 @@ func TestConvertToJSON(t *testing.T) {
 				"league":    "セ・リーグ",
 				"stadium":   "Yankee Stadium",
 				"starttime": "19:00",
-				"status":    "Scheduled",
-				"link":      "https://example.com/match/1",
 			},
 			{
 				"id":        2,
@@ -92,8 +82,6 @@ func TestConvertToJSON(t *testing.T) {
 				"league":    "セ・リーグ",
 				"stadium":   "Dodger Stadium",
 				"starttime": "18:30",
-				"status":    "Scheduled",
-				"link":      "https://example.com/match/2",
 			},
 			// パ・リーグの試合
 			{
@@ -104,8 +92,6 @@ func TestConvertToJSON(t *testing.T) {
 				"league":    "パ・リーグ",
 				"stadium":   "PayPay Dome",
 				"starttime": "14:00",
-				"status":    "Scheduled",
-				"link":      "https://example.com/match/3",
 			},
 			{
 				"id":        4,
@@ -115,8 +101,6 @@ func TestConvertToJSON(t *testing.T) {
 				"league":    "パ・リーグ",
 				"stadium":   "Rakuten Seimei Park",
 				"starttime": "13:00",
-				"status":    "Scheduled",
-				"link":      "https://example.com/match/4",
 			},
 		}
 
@@ -131,8 +115,6 @@ func TestConvertToJSON(t *testing.T) {
 					"league":    "セ・リーグ",
 					"stadium":   "Yankee Stadium",
 					"starttime": "19:00",
-					"status":    "Scheduled",
-					"link":      "https://example.com/match/1",
 				},
 				{
 					"id":        2,
@@ -142,8 +124,6 @@ func TestConvertToJSON(t *testing.T) {
 					"league":    "セ・リーグ",
 					"stadium":   "Dodger Stadium",
 					"starttime": "18:30",
-					"status":    "Scheduled",
-					"link":      "https://example.com/match/2",
 				},
 			},
 			"パ・リーグ": {
@@ -155,8 +135,6 @@ func TestConvertToJSON(t *testing.T) {
 					"league":    "パ・リーグ",
 					"stadium":   "PayPay Dome",
 					"starttime": "14:00",
-					"status":    "Scheduled",
-					"link":      "https://example.com/match/3",
 				},
 				{
 					"id":        4,
@@ -166,8 +144,6 @@ func TestConvertToJSON(t *testing.T) {
 					"league":    "パ・リーグ",
 					"stadium":   "Rakuten Seimei Park",
 					"starttime": "13:00",
-					"status":    "Scheduled",
-					"link":      "https://example.com/match/4",
 				},
 			},
 		}

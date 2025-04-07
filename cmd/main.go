@@ -5,11 +5,15 @@ import (
 	"baseball_report/internal/scheduler"
 	"log"
 	"net/http"
+
+	"github.com/robfig/cron/v3"
 )
 
 func Run() error {
 	//スケジューラ起動
-	go scheduler.StartDailyFetch()
+	c := cron.New()
+	go scheduler.StartDailyFetch(c)
+	c.Start()
 
 	//APIルータを取得しサーバ起動
 	router := api.SetupRouter()

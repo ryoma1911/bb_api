@@ -1,7 +1,6 @@
 package scheduler
 
 import (
-	"baseball_report/internal/fetcher"
 	"bytes"
 	"database/sql"
 	"errors"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/robfig/cron/v3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -57,10 +57,30 @@ func (m *MockURLHandler) GetBody(res *http.Response) (*goquery.Document, error) 
 	return nil, nil
 }
 
-// 正常系のパターン
 func TestStartDailyFetch_Success(t *testing.T) {
+	// ログ出力のキャプチャ
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	c := cron.New(cron.WithLocation(time.Local))
+
+	id, err := StartDailyFetch(c)
+	assert.NoError(t, err)
+
+	c.Start()
+	defer c.Stop()
+
+	time.Sleep(500 * time.Millisecond)
+
+	entry := c.Entry(id)
+	assert.Equal(t, entry.ID, id)
+
+	assert.False(t, entry.Next.IsZero())
+}
+
+// 正常系のパターン
+func TestGetMatchScheduletoday_Success(t *testing.T) {
 	todate := time.Now().Format("2006/01/02")
-	query := "INSERT INTO matches (id, date, home, away, league, stadium, starttime, status, link) values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	query := "INSERT INTO matches (date, home, away, stadium, starttime, link, league) VALUES (?, ?, ?, ?, ?, ?, ?)"
 	// ログ出力のキャプチャ
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
@@ -109,60 +129,19 @@ func TestStartDailyFetch_Success(t *testing.T) {
 			MockConnectOnly: func(dsn string) (*sql.DB, error) {
 				db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 				mock.ExpectExec(query).
-					WithArgs(todate, "Lions", "Giants", "beruna", "12:00", "試合前", "test1/score", "Interleague").
+					WithArgs(todate, "Lions", "Giants", "beruna", "12:00", "test1/score", "Interleague").
 					WillReturnResult(sqlmock.NewResult(1, 1))
 
 				mock.ExpectExec(query).
-					WithArgs(todate, "Fighters", "Hawks", "escon", "18:00", "試合前", "test2/score", "Interleague").
+					WithArgs(todate, "Fighters", "Hawks", "escon", "18:00", "test2/score", "Interleague").
 					WillReturnResult(sqlmock.NewResult(2, 2))
 
 				return db, nil
 			},
 		}
 
-		//スケジューラー開始
-		StartDailyFetch()
-
-		// スケジュール登録の確認と手動実行
-		entries := scheduler.Entries()
-		if len(entries) == 0 {
-			t.Fatal("No scheduled tasks were added")
-		}
-
-		// スケジュールされた関数を手動で実行
-		entries[0].Job.Run()
-
-		// **期待する試合データ**
-		expectedMatches := [][]string{
-			{todate, "Lions", "Giants", "beruna", "12:00", "試合前", "test1/score", "Interleague"},
-			{todate, "Fighters", "Hawks", "escon", "18:00", "試合前", "test2/score", "Interleague"},
-		}
-		htmlDoc, _ := goquery.NewDocumentFromReader(strings.NewReader(`
-		<div class="bb-score">
-			<h2 class="bb-score__title">Interleague</h2>
-			<div class="bb-score__item">
-				<div class="bb-score__homeLogo">Lions</div>
-				<div class="bb-score__awayLogo">Giants</div>
-				<div class="bb-score__venue">beruna</div>
-				<div class="bb-score__status">試合前</div>
-				<div class="bb-score__link">12:00</div>
-				<div class="bb-score__content" href="test1/index"></div>
-			</div>
-			<div class="bb-score__item">
-				<div class="bb-score__homeLogo">Fighters</div>
-				<div class="bb-score__awayLogo">Hawks</div>
-				<div class="bb-score__venue">escon</div>
-				<div class="bb-score__status">試合前</div>
-				<div class="bb-score__link">18:00</div>
-				<div class="bb-score__content" href="test2/index"></div>
-			</div>
-		</div>`))
-		actualMatches, err := fetcher.GetMatchSchedule(htmlDoc)
-
-		assert.NoError(t, err)
-
-		assert.Equal(t, expectedMatches, actualMatches)
-
+		//関数実行
+		GetMatchScheduletoday()
 		assert.Contains(t, buf.String(), "Get matches 2 games")
 
 	})
@@ -183,19 +162,9 @@ func TestStartDailyFetch_Success(t *testing.T) {
 				return doc, nil
 			},
 		}
-		//スケジューラー開始
-		StartDailyFetch()
+		//関数実行
+		GetMatchScheduletoday()
 
-		// スケジュール登録の確認と手動実行
-		entries := scheduler.Entries()
-		if len(entries) == 0 {
-			t.Fatal("No scheduled tasks were added")
-		}
-
-		// スケジュールされた関数を手動で実行
-		entries[0].Job.Run()
-		// ログ結果が期待値と一致している
-		fmt.Println("Captured log:", buf.String()) // ログを確認
 		//ログ結果が期待値と一致している
 		assert.Contains(t, buf.String(), "There's no game today")
 	})
@@ -203,7 +172,7 @@ func TestStartDailyFetch_Success(t *testing.T) {
 }
 
 // エラー系のテスト
-func TestStartDailyFetch_Errors(t *testing.T) {
+func TestGetMatchScheduletoday_Errors(t *testing.T) {
 	query := "INSERT INTO matches (date, home, away, stadium, status, starttime, link, league) values (?, ?, ?, ?, ?, ?, ?, ?)"
 
 	var buf bytes.Buffer
@@ -216,8 +185,7 @@ func TestStartDailyFetch_Errors(t *testing.T) {
 			},
 		}
 
-		StartDailyFetch()
-		scheduler.Entries()[0].Job.Run()
+		GetMatchScheduletoday()
 
 		assert.Contains(t, buf.String(), "failed to get URL: failed to fetch URL")
 	})
@@ -232,10 +200,39 @@ func TestStartDailyFetch_Errors(t *testing.T) {
 			},
 		}
 
-		StartDailyFetch()
-		scheduler.Entries()[0].Job.Run()
+		GetMatchScheduletoday()
 
 		assert.Contains(t, buf.String(), "failed to get body: failed to parse HTML")
+	})
+
+	t.Run("Error_GetDSN", func(t *testing.T) {
+		scraper = &MockURLHandler{
+			MockGetURL: func(url string) (*http.Response, error) {
+				return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader("mock html"))}, nil
+			},
+			MockGetBody: func(res *http.Response) (*goquery.Document, error) {
+				doc, _ := goquery.NewDocumentFromReader(strings.NewReader(`
+					<div class="bb-score">
+						<div class="bb-score__item">
+							<div class="bb-score__homeLogo">Lions</div>
+							<div class="bb-score__awayLogo">Giants</div>
+							<div class="bb-score__venue">beruna</div>
+							<div class="bb-score__status">試合前</div>
+							<div class="bb-score__link">12:00</div>
+							<div class="bb-score__content" href="test1/index"></div>
+						</div>
+					</div>`))
+				return doc, nil
+			},
+		}
+		connect = &MockDBHandler{
+			MockGetDSNFromEnv: func(path string) (string, error) {
+				return "mock dsn", fmt.Errorf("failed to load env file:")
+			},
+		}
+		GetMatchScheduletoday()
+
+		assert.Contains(t, buf.String(), "failed to load env file: ")
 	})
 
 	t.Run("Error_DBConnect", func(t *testing.T) {
@@ -265,8 +262,7 @@ func TestStartDailyFetch_Errors(t *testing.T) {
 			},
 		}
 
-		StartDailyFetch()
-		scheduler.Entries()[0].Job.Run()
+		GetMatchScheduletoday()
 
 		assert.Contains(t, buf.String(), "failed to check to connect database: failed to connect to DB")
 	})
@@ -300,13 +296,8 @@ func TestStartDailyFetch_Errors(t *testing.T) {
 			},
 		}
 
-		StartDailyFetch()
-		scheduler.Entries()[0].Job.Run()
+		GetMatchScheduletoday()
 
 		assert.Contains(t, buf.String(), "failed to insert:")
 	})
-}
-
-func TestStartDailyFetch(t *testing.T) {
-	GetMatchScheduletoday()
 }

@@ -38,7 +38,7 @@ func TestGetMatchesHandler_Success(t *testing.T) {
 	// 1リーグ2ゲーム
 	t.Run("Get 1league2games", func(t *testing.T) {
 		todate := time.Now().Format("2006/01/02")
-		query := "SELECT id, date, home, away, league, stadium, starttime, status, link FROM matches WHERE date ='" + todate + "'"
+		query := "SELECT id, date, home, away, league, stadium, starttime FROM matches WHERE date ='" + todate + "'"
 
 		connect = &MockDBHandler{
 			MockGetDSNFromEnv: func(path string) (string, error) {
@@ -46,9 +46,9 @@ func TestGetMatchesHandler_Success(t *testing.T) {
 			},
 			MockConnectOnly: func(dsn string) (*sql.DB, error) {
 				db, mock, _ := sqlmock.New()
-				rows := sqlmock.NewRows([]string{"id", "date", "home", "away", "league", "stadium", "starttime", "status", "link"}).
-					AddRow(1, todate, "Yankees", "Red Sox", "セ・リーグ", "Yankee Stadium", "19:00", "試合前", "https://example.com/match/1").
-					AddRow(2, todate, "Dodgers", "Giants", "セ・リーグ", "Dodger Stadium", "18:30", "試合前", "https://example.com/match/2")
+				rows := sqlmock.NewRows([]string{"id", "date", "home", "away", "league", "stadium", "starttime"}).
+					AddRow(1, todate, "Yankees", "Red Sox", "セ・リーグ", "Yankee Stadium", "19:00").
+					AddRow(2, todate, "Dodgers", "Giants", "セ・リーグ", "Dodger Stadium", "18:30")
 
 				mock.ExpectQuery(query).WillReturnRows(rows)
 				return db, nil
@@ -65,9 +65,7 @@ func TestGetMatchesHandler_Success(t *testing.T) {
 				"away": "Red Sox",
 				"league": "セ・リーグ",
 				"stadium": "Yankee Stadium",
-				"starttime": "19:00",
-				"status": "試合前",
-				"link": "https://example.com/match/1"
+				"starttime": "19:00"
 			  },
 			  {
 				"id": 2,
@@ -76,16 +74,13 @@ func TestGetMatchesHandler_Success(t *testing.T) {
 				"away": "Giants",
 				"league": "セ・リーグ",
 				"stadium": "Dodger Stadium",
-				"starttime": "18:30",
-				"status": "試合前",
-				"link": "https://example.com/match/2"
+				"starttime": "18:30"
 			  }
 			]
 		}`
 
 		//HTTPリクエスト作成
-		req, err := http.NewRequest("GET", "/matches", nil)
-		assert.NoError(t, err)
+		req, _ := http.NewRequest("GET", "/matches", nil)
 
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(GetMatchesHandler)
@@ -102,7 +97,7 @@ func TestGetMatchesHandler_Success(t *testing.T) {
 	// 2リーグ4ゲーム
 	t.Run("Get 2league2games", func(t *testing.T) {
 		todate := time.Now().Format("2006/01/02")
-		query := "SELECT id, date, home, away, league, stadium, starttime, status, link FROM matches WHERE date ='" + todate + "'"
+		query := "SELECT id, date, home, away, league, stadium, starttime FROM matches WHERE date ='" + todate + "'"
 
 		connect = &MockDBHandler{
 			MockGetDSNFromEnv: func(path string) (string, error) {
@@ -110,11 +105,11 @@ func TestGetMatchesHandler_Success(t *testing.T) {
 			},
 			MockConnectOnly: func(dsn string) (*sql.DB, error) {
 				db, mock, _ := sqlmock.New()
-				rows := sqlmock.NewRows([]string{"id", "date", "home", "away", "league", "stadium", "starttime", "status", "link"}).
-					AddRow(1, todate, "Yankees", "Red Sox", "セ・リーグ", "Yankee Stadium", "19:00", "試合前", "https://example.com/match/1").
-					AddRow(2, todate, "Dodgers", "Giants", "セ・リーグ", "Dodger Stadium", "18:30", "試合前", "https://example.com/match/2").
-					AddRow(3, todate, "SoftBank", "Rakuten", "パ・リーグ", "PayPayドーム", "18:00", "試合前", "https://example.com/match/3").
-					AddRow(4, todate, "Lotte", "Seibu", "パ・リーグ", "ZOZOマリン", "18:00", "試合前", "https://example.com/match/4")
+				rows := sqlmock.NewRows([]string{"id", "date", "home", "away", "league", "stadium", "starttime"}).
+					AddRow(1, todate, "Yankees", "Red Sox", "セ・リーグ", "Yankee Stadium", "19:00").
+					AddRow(2, todate, "Dodgers", "Giants", "セ・リーグ", "Dodger Stadium", "18:30").
+					AddRow(3, todate, "SoftBank", "Rakuten", "パ・リーグ", "PayPayドーム", "18:00").
+					AddRow(4, todate, "Lotte", "Seibu", "パ・リーグ", "ZOZOマリン", "18:00")
 
 				mock.ExpectQuery(query).WillReturnRows(rows)
 				return db, nil
@@ -133,9 +128,7 @@ func TestGetMatchesHandler_Success(t *testing.T) {
 				"away": "Red Sox",
 				"league": "セ・リーグ",
 				"stadium": "Yankee Stadium",
-				"starttime": "19:00",
-				"status": "試合前",
-				"link": "https://example.com/match/1"
+				"starttime": "19:00"
 			},
 			{
 				"id": 2,
@@ -144,9 +137,7 @@ func TestGetMatchesHandler_Success(t *testing.T) {
 				"away": "Giants",
 				"league": "セ・リーグ",
 				"stadium": "Dodger Stadium",
-				"starttime": "18:30",
-				"status": "試合前",
-				"link": "https://example.com/match/2"
+				"starttime": "18:30"
 			}
 			],
 			"パ・リーグ": [
@@ -157,9 +148,7 @@ func TestGetMatchesHandler_Success(t *testing.T) {
 				"away": "Rakuten",
 				"league": "パ・リーグ",
 				"stadium": "PayPayドーム",
-				"starttime": "18:00",
-				"status": "試合前",
-				"link": "https://example.com/match/3"
+				"starttime": "18:00"
 			},
 			{
 				"id": 4,
@@ -168,16 +157,13 @@ func TestGetMatchesHandler_Success(t *testing.T) {
 				"away": "Seibu",
 				"league": "パ・リーグ",
 				"stadium": "ZOZOマリン",
-				"starttime": "18:00",
-				"status": "試合前",
-				"link": "https://example.com/match/4"
+				"starttime": "18:00"
 			}
 			]
 		}`
 
 		//HTTPリクエスト作成
-		req, err := http.NewRequest("GET", "/matches", nil)
-		assert.NoError(t, err)
+		req, _ := http.NewRequest("GET", "/matches", nil)
 
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(GetMatchesHandler)
@@ -194,7 +180,7 @@ func TestGetMatchesHandler_Success(t *testing.T) {
 	// 1試合もない
 	t.Run("Get Nogames", func(t *testing.T) {
 		todate := time.Now().Format("2006/01/02")
-		query := "SELECT id, date, home, away, league, stadium, starttime, status, link FROM matches WHERE date ='" + todate + "'"
+		query := "SELECT id, date, home, away, league, stadium, starttime FROM matches WHERE date ='" + todate + "'"
 
 		connect = &MockDBHandler{
 			MockGetDSNFromEnv: func(path string) (string, error) {
@@ -202,7 +188,7 @@ func TestGetMatchesHandler_Success(t *testing.T) {
 			},
 			MockConnectOnly: func(dsn string) (*sql.DB, error) {
 				db, mock, _ := sqlmock.New()
-				rows := sqlmock.NewRows([]string{"id", "date", "home", "away", "league", "stadium", "starttime", "status", "link"})
+				rows := sqlmock.NewRows([]string{"id", "date", "home", "away", "league", "stadium", "starttime"})
 				mock.ExpectQuery(query).WillReturnRows(rows)
 				return db, nil
 			},
@@ -214,8 +200,7 @@ func TestGetMatchesHandler_Success(t *testing.T) {
 		}`
 
 		//HTTPリクエスト作成
-		req, err := http.NewRequest("GET", "/matches", nil)
-		assert.NoError(t, err)
+		req, _ := http.NewRequest("GET", "/matches", nil)
 
 		rr := httptest.NewRecorder()
 		handler := http.HandlerFunc(GetMatchesHandler)
@@ -276,7 +261,7 @@ func TestGetMatchesHandler_Failes(t *testing.T) {
 	// クエリ実行失敗
 	t.Run("Failed to execute query", func(t *testing.T) {
 		todate := time.Now().Format("2006/01/02")
-		query := "SELECT id, date, home, away, league, stadium, starttime, status, link FROM matches WHERE date ='" + todate + "'"
+		query := "SELECT id, date, home, away, league, stadium, starttime FROM matches WHERE date ='" + todate + "'"
 
 		connect = &MockDBHandler{
 			MockGetDSNFromEnv: func(_ string) (string, error) {
@@ -306,7 +291,7 @@ func TestSetupRouter_Success(t *testing.T) {
 
 	t.Run("GET /matches returns match data", func(t *testing.T) {
 		todate := time.Now().Format("2006/01/02")
-		query := "SELECT id, date, home, away, league, stadium, starttime, status, link FROM matches WHERE date ='" + todate + "'"
+		query := "SELECT id, date, home, away, league, stadium, starttime FROM matches WHERE date ='" + todate + "'"
 
 		connect = &MockDBHandler{
 			MockGetDSNFromEnv: func(path string) (string, error) {
@@ -314,9 +299,9 @@ func TestSetupRouter_Success(t *testing.T) {
 			},
 			MockConnectOnly: func(dsn string) (*sql.DB, error) {
 				db, mock, _ := sqlmock.New()
-				rows := sqlmock.NewRows([]string{"id", "date", "home", "away", "league", "stadium", "starttime", "status", "link"}).
-					AddRow(1, todate, "Yankees", "Red Sox", "セ・リーグ", "Yankee Stadium", "19:00", "試合前", "https://example.com/match/1").
-					AddRow(2, todate, "Dodgers", "Giants", "セ・リーグ", "Dodger Stadium", "18:30", "試合前", "https://example.com/match/2")
+				rows := sqlmock.NewRows([]string{"id", "date", "home", "away", "league", "stadium", "starttime"}).
+					AddRow(1, todate, "Yankees", "Red Sox", "セ・リーグ", "Yankee Stadium", "19:00").
+					AddRow(2, todate, "Dodgers", "Giants", "セ・リーグ", "Dodger Stadium", "18:30")
 
 				mock.ExpectQuery(query).WillReturnRows(rows)
 				return db, nil

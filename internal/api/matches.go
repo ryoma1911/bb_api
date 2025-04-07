@@ -15,7 +15,6 @@ var connect db.DBHandler = &db.DBService{}
 func GetMatchesHandler(w http.ResponseWriter, r *http.Request) {
 
 	todate := time.Now().Format("2006/01/02")
-	query := "SELECT id, date, home, away, league, stadium, starttime, status FROM matches WHERE date ='" + todate + "'"
 	//DB接続
 	dsn, err := connect.GetDSNFromEnv("/code/.env")
 	if err != nil {
@@ -32,7 +31,7 @@ func GetMatchesHandler(w http.ResponseWriter, r *http.Request) {
 	//試合情報を取得
 	repo := &repository.DefaultRepository{}
 
-	matches, err := repo.GetMatchAPI(db, query)
+	matches, err := repo.GetMatchAPI(db, todate)
 	if err != nil {
 		http.Error(w, "Error executing query: "+err.Error(), http.StatusInternalServerError)
 		return

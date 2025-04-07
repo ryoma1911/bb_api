@@ -13,7 +13,7 @@ go get -u github.com/robfig/cron/v3 #スケジュール実行ライブラリ
 go get -u github.com/golang/mock/gomock
 go get -u github.com/patrickmn/go-cache
 go get -u github.com/gorilla/mux
-go get -u install github.com/go-delve/delve/cmd/dlv
+go install -v github.com/go-delve/delve/cmd/dlv@latest
 
 
 # cmdディレクトリに移動してビルド
