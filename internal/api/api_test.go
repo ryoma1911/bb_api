@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -58,7 +59,7 @@ func TestGetMatchesHandler_Success(t *testing.T) {
 		//期待値を設定
 		expected := `{
 			"セ・リーグ": [
-			  {
+			{
 				"id": 1,
 				"date": "` + todate + `",
 				"home": "Yankees",
@@ -66,8 +67,8 @@ func TestGetMatchesHandler_Success(t *testing.T) {
 				"league": "セ・リーグ",
 				"stadium": "Yankee Stadium",
 				"starttime": "19:00"
-			  },
-			  {
+			},
+			{
 				"id": 2,
 				"date": "` + todate + `",
 				"home": "Dodgers",
@@ -75,7 +76,7 @@ func TestGetMatchesHandler_Success(t *testing.T) {
 				"league": "セ・リーグ",
 				"stadium": "Dodger Stadium",
 				"starttime": "18:30"
-			  }
+			}
 			]
 		}`
 
@@ -319,6 +320,36 @@ func TestSetupRouter_Success(t *testing.T) {
 
 		assert.Contains(t, string(bodyBytes), "Giants", "response should contain 'Giants'")
 	})
+
+	t.Run("GET /scores returns score data", func(t *testing.T) {
+		query := "SELECT id, home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='7'"
+
+		connect = &MockDBHandler{
+			MockGetDSNFromEnv: func(path string) (string, error) {
+				return "mock dsn", nil
+			},
+			MockConnectOnly: func(dsn string) (*sql.DB, error) {
+				db, mock, _ := sqlmock.New()
+				rows := sqlmock.NewRows([]string{"id", "home_score", "away_score", "batter", "inning", "result", "match_id"}).
+					AddRow(1, "2", "1", "山田", "3回裏", "ホームラン", 7)
+
+				mock.ExpectQuery(query).WillReturnRows(rows)
+				return db, nil
+			},
+		}
+
+		req := httptest.NewRequest("GET", "/scores/7", nil)
+		rr := httptest.NewRecorder()
+
+		router.ServeHTTP(rr, req)
+
+		assert.Equal(t, rr.Code, http.StatusOK)
+
+		bodyBytes, _ := io.ReadAll(rr.Body)
+
+		assert.Contains(t, string(bodyBytes), "7", "response should contain '7'")
+
+	})
 	t.Run("GET /health returns OK", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/health", nil)
 		rr := httptest.NewRecorder()
@@ -332,5 +363,159 @@ func TestSetupRouter_Success(t *testing.T) {
 		if rr.Body.String() != "OK" {
 			t.Errorf("expected body OK, got %s", rr.Body.String())
 		}
+	})
+}
+
+func TestGetScoreHandler_Success(t *testing.T) {
+	// 取得成功
+	t.Run("Success get score", func(t *testing.T) {
+		query := "SELECT id, home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='7'"
+
+		connect = &MockDBHandler{
+			MockGetDSNFromEnv: func(path string) (string, error) {
+				return "mock dsn", nil
+			},
+			MockConnectOnly: func(dsn string) (*sql.DB, error) {
+				db, mock, _ := sqlmock.New()
+				rows := sqlmock.NewRows([]string{"id", "home_score", "away_score", "batter", "inning", "result", "match_id"}).
+					AddRow(1, "2", "1", "山田", "3回裏", "ホームラン", 7)
+
+				mock.ExpectQuery(query).WillReturnRows(rows)
+				return db, nil
+			},
+		}
+
+		//期待値を設定
+		expected := `[
+				{
+					"id": 1,
+					"home_score": "2",
+					"away_score": "1",
+					"batter": "山田",
+					"inning": "3回裏",
+					"result": "ホームラン",
+					"match_id": 7
+				}
+				]`
+
+		//HTTPリクエスト作成
+		req := httptest.NewRequest("GET", "/scores/7", nil)
+		req = mux.SetURLVars(req, map[string]string{"id": "7"})
+
+		rr := httptest.NewRecorder()
+		handler := http.HandlerFunc(GetScoreHandler)
+
+		handler.ServeHTTP(rr, req)
+
+		// HTTPステータスコードチェック
+		assert.Equal(t, http.StatusOK, rr.Code)
+
+		//JSONレスポンスをチェック
+		assert.JSONEq(t, expected, rr.Body.String(), "JSON does not match")
+	})
+
+	t.Run("Success no score", func(t *testing.T) {
+		query := "SELECT id, home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='7'"
+
+		connect = &MockDBHandler{
+			MockGetDSNFromEnv: func(path string) (string, error) {
+				return "mock dsn", nil
+			},
+			MockConnectOnly: func(dsn string) (*sql.DB, error) {
+				db, mock, _ := sqlmock.New()
+				rows := sqlmock.NewRows([]string{"id", "home_score", "away_score", "batter", "inning", "result", "match_id"})
+
+				mock.ExpectQuery(query).WillReturnRows(rows)
+				return db, nil
+			},
+		}
+		//期待値を設定
+		expected := `{
+				"message": "No score found"
+			}`
+
+		//HTTPリクエスト作成
+		req := httptest.NewRequest("GET", "/scores/7", nil)
+		req = mux.SetURLVars(req, map[string]string{"id": "7"})
+
+		rr := httptest.NewRecorder()
+		handler := http.HandlerFunc(GetScoreHandler)
+
+		handler.ServeHTTP(rr, req)
+
+		// HTTPステータスコードチェック
+		assert.Equal(t, http.StatusOK, rr.Code)
+
+		//JSONレスポンスをチェック
+		assert.JSONEq(t, expected, rr.Body.String(), "JSON does not match")
+	})
+}
+
+// GetMatchesHandler:エラー系のパターン
+func TestGetScoreHandler_Failes(t *testing.T) {
+	// DSN取得失敗
+	t.Run("Failed to get DSN", func(t *testing.T) {
+		connect = &MockDBHandler{
+			MockGetDSNFromEnv: func(_ string) (string, error) {
+				return "", errors.New("DSN取得失敗")
+			},
+			MockConnectOnly: nil,
+		}
+
+		req, _ := http.NewRequest("GET", "/scores/7", nil)
+		rr := httptest.NewRecorder()
+		handler := http.HandlerFunc(GetScoreHandler)
+
+		handler.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
+		assert.Contains(t, rr.Body.String(), "Get dsn error")
+	})
+
+	// DB接続失敗
+	t.Run("Failed to connect DB", func(t *testing.T) {
+		connect = &MockDBHandler{
+			MockGetDSNFromEnv: func(_ string) (string, error) {
+				return "mock_dsn", nil
+			},
+			MockConnectOnly: func(_ string) (*sql.DB, error) {
+				return nil, errors.New("DB接続エラー")
+			},
+		}
+
+		req, _ := http.NewRequest("GET", "/scores/7", nil)
+		rr := httptest.NewRecorder()
+		handler := http.HandlerFunc(GetScoreHandler)
+
+		handler.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
+		assert.Contains(t, rr.Body.String(), "Database connection error")
+	})
+
+	// クエリ実行失敗
+	t.Run("Failed to execute query", func(t *testing.T) {
+		todate := time.Now().Format("2006/01/02")
+		query := "SELECT id, date, home, away, league, stadium, starttime FROM matches WHERE date ='" + todate + "'"
+
+		connect = &MockDBHandler{
+			MockGetDSNFromEnv: func(_ string) (string, error) {
+				return "mock_dsn", nil
+			},
+			MockConnectOnly: func(_ string) (*sql.DB, error) {
+				db, mock, _ := sqlmock.New()
+				mock.ExpectQuery(query).WillReturnError(errors.New("クエリエラー"))
+				return db, nil
+			},
+		}
+
+		req, _ := http.NewRequest("GET", "/scores/7", nil)
+		rr := httptest.NewRecorder()
+		handler := http.HandlerFunc(GetScoreHandler)
+
+		handler.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusInternalServerError, rr.Code)
+		assert.Contains(t, rr.Body.String(), "Error executing query:")
 	})
 }

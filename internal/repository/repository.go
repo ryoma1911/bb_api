@@ -8,13 +8,13 @@ import (
 // Repository インターフェース
 type Repository interface {
 	GetMatch(db *sql.DB, query string) ([]map[string]interface{}, error)
-	InsertMatch(db *sql.DB, query string, args ...interface{}) error
+	InsertData(db *sql.DB, query string, args ...interface{}) error
 }
 
 // DefaultRepository 実装
 type DefaultRepository struct{}
 
-func (d *DefaultRepository) InsertMatch(db *sql.DB, query string, args ...interface{}) error {
+func (d *DefaultRepository) InsertData(db *sql.DB, query string, args ...interface{}) error {
 	_, err := db.Exec(query, args...)
 	if err != nil {
 		return fmt.Errorf("failed to insert: %w", err)
@@ -57,6 +57,44 @@ func (d *DefaultRepository) GetMatch(db *sql.DB, query string) ([]map[string]int
 
 	}
 	return matches, nil
+
+}
+
+// スコア情報を取得
+func (d *DefaultRepository) GetScore(db *sql.DB, id string) ([]map[string]interface{}, error) {
+	query := "SELECT id, home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='" + id + "'"
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch match: %w", err)
+	}
+	defer rows.Close()
+
+	var score []map[string]interface{} //空のスライスを定義
+	for rows.Next() {
+		var id int
+		var home_score string
+		var away_score string
+		var batter string
+		var inning string
+		var result string
+		var match_id int
+
+		if err := rows.Scan(&id, &home_score, &away_score, &batter, &inning, &result, &match_id); err != nil {
+			return nil, fmt.Errorf("failed to scan match row: %w", err)
+		}
+		//試合情報をマップに格納、スライスに追加
+		score = append(score, map[string]interface{}{
+			"id":         id,
+			"home_score": home_score,
+			"away_score": away_score,
+			"batter":     batter,
+			"inning":     inning,
+			"result":     result,
+			"match_id":   match_id,
+		})
+
+	}
+	return score, nil
 
 }
 

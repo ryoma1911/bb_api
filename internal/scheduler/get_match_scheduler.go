@@ -18,7 +18,9 @@ var connect db.DBHandler = &db.DBService{}
 var scraper utils.URLHandler = &utils.URLService{}
 
 func StartDailyFetch(c *cron.Cron) (cron.EntryID, error) {
-	return c.AddFunc("0 6 * * *", func() {
+	// 日本時間でcronスケジュールを設定
+	return c.AddFunc("10 0 * * *", func() {
+		// 現在の日本時間をログに出力
 		log.Println("Executing task at:", time.Now())
 		GetMatchScheduletoday()
 	})
@@ -26,7 +28,8 @@ func StartDailyFetch(c *cron.Cron) (cron.EntryID, error) {
 
 // 当日の試合情報を取得しテーブルに登録
 func GetMatchScheduletoday() {
-	url := "https://baseball.yahoo.co.jp/npb/schedule/"
+	todate := time.Now().Format("2006-01-02")
+	url := "https://baseball.yahoo.co.jp/npb/schedule/?date=" + todate
 
 	res, err := scraper.GetURL(url)
 	if err != nil {
@@ -48,7 +51,10 @@ func GetMatchScheduletoday() {
 
 	//試合がある場合はテーブルに格納
 	if len(matches) != 0 {
-		query := "INSERT INTO matches (date, home, away, stadium, starttime, link, league) VALUES (?, ?, ?, ?, ?, ?, ?)"
+		query := `
+			INSERT INTO matches (date, home, away, stadium, starttime, link, league) 
+			VALUES (?, ?, ?, ?, ?, ?, ?)
+			`
 		dsn, err := connect.GetDSNFromEnv("/code/.env")
 		if err != nil {
 			log.Println(fmt.Errorf("failed to load env file: %w", err))
@@ -61,7 +67,7 @@ func GetMatchScheduletoday() {
 		}
 		for _, match := range matches {
 			//matchesテーブルに追加
-			err := repo.InsertMatch(db, query, match[0], match[1], match[2], match[3], match[5], match[6], match[7])
+			err := repo.InsertData(db, query, match[0], match[1], match[2], match[3], match[5], match[6], match[7])
 			if err != nil {
 				log.Println(err)
 			}

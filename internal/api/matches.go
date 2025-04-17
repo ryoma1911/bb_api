@@ -12,6 +12,7 @@ import (
 
 var connect db.DBHandler = &db.DBService{}
 
+// 当日の試合情報を取得、JSON形式でレスポンスする
 func GetMatchesHandler(w http.ResponseWriter, r *http.Request) {
 
 	todate := time.Now().Format("2006/01/02")

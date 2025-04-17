@@ -12,8 +12,8 @@ CREATE TABLE matches (
     league VARCHAR(50) NOT NULL,
     stadium VARCHAR(100) NOT NULL,
     starttime TIME NOT NULL,
-    link VARCHAR(255), -- 進捗ページのURL
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    UNIQUE KEY link VARCHAR(255), -- 進捗ページのURL
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 );
 
 CREATE TABLE scores (

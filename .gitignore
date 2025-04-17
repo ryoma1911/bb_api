@@ -1,9 +1,7 @@
 go.mod
 go.sum
-test.http
-api-test.go
-scrape-test.go
-scrape.go
 .vscode
 .env
+.env.prod
 rest.http
+Infrastructure_design.md

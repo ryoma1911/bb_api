@@ -11,6 +11,7 @@ func SetupRouter() *mux.Router {
 
 	//エンドポイントを設定
 	r.HandleFunc("/matches", GetMatchesHandler).Methods("GET")
+	r.HandleFunc("/scores/{id}", GetScoreHandler).Methods("GET")
 
 	//ヘルスチェックも追加
 	r.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {

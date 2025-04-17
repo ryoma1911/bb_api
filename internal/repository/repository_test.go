@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"database/sql"
 	"fmt"
 	"testing"
 	"time"
@@ -9,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestInsertMatch： DBの特定テーブルにデータが追加されるケースをテスト
-func TestInsertMatch(t *testing.T) {
+// TestInsertData： DBの特定テーブルにデータが追加されるケースをテスト
+func TestInsertData(t *testing.T) {
 	repo := &DefaultRepository{}
 
 	// SQLモックの作成
@@ -19,30 +20,63 @@ func TestInsertMatch(t *testing.T) {
 	defer db.Close()
 
 	t.Run("Success INSERT", func(t *testing.T) {
-		//クエリを実行しデータが追加されていること
 		query := "INSERT INTO matches (team1, team2, score) VALUES (?, ?, ?)"
 		mock.ExpectExec(query).
 			WithArgs("Yankees", "Red Sox", "5-3").
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
-		err = repo.InsertMatch(db, query, "Yankees", "Red Sox", "5-3")
+		err := repo.InsertData(db, query, "Yankees", "Red Sox", "5-3")
 		assert.NoError(t, err)
-
 		assert.NoError(t, mock.ExpectationsWereMet())
-
 	})
 
 	t.Run("Failed INSERT", func(t *testing.T) {
-		//クエリ実行でエラーが出力されていること
-		query := "INSERTE INTO matches (team1, team2, score) VALUES (?, ?)"
+		query := "INSERT INTO matches (team1, team2, score) VALUES (?, ?, ?)"
 		mock.ExpectExec(query).
 			WithArgs("Yankees", "Red Sox", "5-3").
-			WillReturnResult(sqlmock.NewResult(1, 1))
+			WillReturnError(sql.ErrConnDone)
 
-		err = repo.InsertMatch(db, query, "")
+		err := repo.InsertData(db, query, "Yankees", "Red Sox", "5-3")
 		assert.Error(t, err)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
 
-		assert.Error(t, mock.ExpectationsWereMet())
+	t.Run("Success UPSERT", func(t *testing.T) {
+		query := `
+			INSERT INTO scores (home_score, away_score, batter, inning, result, match_id)
+			VALUES (?, ?, ?, ?, ?, ?)
+			ON DUPLICATE KEY UPDATE
+			home_score = VALUES(home_score),
+			away_score = VALUES(away_score),
+			batter = VALUES(batter),
+			result = VALUES(result)
+		`
+		mock.ExpectExec(query).
+			WithArgs("2", "1", "山田", "3回裏", "ホームラン", 7).
+			WillReturnResult(sqlmock.NewResult(1, 2)) // INSERT or UPDATE
+
+		err := repo.InsertData(db, query, "2", "1", "山田", "3回裏", "ホームラン", 7)
+		assert.NoError(t, err)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("Failed UPSERT", func(t *testing.T) {
+		query := `
+			INSERT INTO scores (home_score, away_score, batter, inning, result, match_id)
+			VALUES (?, ?, ?, ?, ?, ?)
+			ON DUPLICATE KEY UPDATE
+			home_score = VALUES(home_score),
+			away_score = VALUES(away_score),
+			batter = VALUES(batter),
+			result = VALUES(result)
+		`
+		mock.ExpectExec(query).
+			WithArgs("2", "1", "山田", "3回裏", "ホームラン", 7).
+			WillReturnError(sql.ErrConnDone)
+
+		err := repo.InsertData(db, query, "2", "1", "山田", "3回裏", "ホームラン", 7)
+		assert.Error(t, err)
+		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }
 
@@ -274,6 +308,55 @@ func TestGetMatchAPI(t *testing.T) {
 		assert.Contains(t, err.Error(), "failed to scan match row")
 
 		// モックの期待値が満たされていることを確認
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+}
+
+func TestGetScore(t *testing.T) {
+	repo := &DefaultRepository{}
+
+	// SQLモックの作成
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer db.Close()
+
+	t.Run("Success to get score", func(t *testing.T) {
+		matchID := "7"
+		query := "SELECT id, home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='" + matchID + "'"
+
+		rows := sqlmock.NewRows([]string{"id", "home_score", "away_score", "batter", "inning", "result", "match_id"}).
+			AddRow(1, "2", "1", "山田", "3回裏", "ホームラン", 7)
+
+		mock.ExpectQuery(query).WillReturnRows(rows)
+
+		result, err := repo.GetScore(db, matchID)
+		assert.NoError(t, err)
+
+		expected := []map[string]interface{}{
+			{
+				"id":         1,
+				"home_score": "2",
+				"away_score": "1",
+				"batter":     "山田",
+				"inning":     "3回裏",
+				"result":     "ホームラン",
+				"match_id":   7,
+			},
+		}
+
+		assert.Equal(t, expected, result)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("Fail to get score", func(t *testing.T) {
+		matchID := "7"
+		query := "SELECT id, home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='" + matchID + "'"
+
+		mock.ExpectQuery(query).WillReturnError(sql.ErrConnDone)
+
+		result, err := repo.GetScore(db, matchID)
+		assert.Error(t, err)
+		assert.Nil(t, result)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }

@@ -301,3 +301,8 @@ func TestGetMatchScheduletoday_Errors(t *testing.T) {
 		assert.Contains(t, buf.String(), "failed to insert:")
 	})
 }
+
+func Test(t *testing.T) {
+	c := cron.New()
+	StartDailyFetch(c)
+}
