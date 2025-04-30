@@ -322,10 +322,10 @@ func TestGetScore(t *testing.T) {
 
 	t.Run("Success to get score", func(t *testing.T) {
 		matchID := "7"
-		query := "SELECT id, home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='" + matchID + "'"
+		query := "SELECT home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='" + matchID + "'"
 
-		rows := sqlmock.NewRows([]string{"id", "home_score", "away_score", "batter", "inning", "result", "match_id"}).
-			AddRow(1, "2", "1", "山田", "3回裏", "ホームラン", 7)
+		rows := sqlmock.NewRows([]string{"home_score", "away_score", "batter", "inning", "result", "match_id"}).
+			AddRow("2", "1", "山田", "3回裏", "ホームラン", 7)
 
 		mock.ExpectQuery(query).WillReturnRows(rows)
 
@@ -334,13 +334,12 @@ func TestGetScore(t *testing.T) {
 
 		expected := []map[string]interface{}{
 			{
-				"id":         1,
+				"match_id":   7,
 				"home_score": "2",
 				"away_score": "1",
 				"batter":     "山田",
 				"inning":     "3回裏",
 				"result":     "ホームラン",
-				"match_id":   7,
 			},
 		}
 
@@ -350,7 +349,7 @@ func TestGetScore(t *testing.T) {
 
 	t.Run("Fail to get score", func(t *testing.T) {
 		matchID := "7"
-		query := "SELECT id, home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='" + matchID + "'"
+		query := "SELECT home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='" + matchID + "'"
 
 		mock.ExpectQuery(query).WillReturnError(sql.ErrConnDone)
 

@@ -2,6 +2,7 @@ go.mod
 go.sum
 .vscode
 .env
-.env.prod
+.env.dev
 rest.http
 Infrastructure_design.md
+bb-api-prod/

@@ -12,7 +12,7 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     env_file:
-      - .env
+    - .env
     # DBのコンテナのヘルスチェックを行う
     # mysqladmin(MySQLサーバーの管理を行うクライアントを使ってDBコンテナ自身(127.0.0.1)にpingを送ってヘルスチェックを行う
     healthcheck:
@@ -38,8 +38,11 @@ services:
       db:
         # dbのヘルスチェックが終わってからappを起動させる
         condition: service_healthy
+    env_file:
+    - .env
     environment:
       - TZ=Asia/Tokyo
+    restart: always
 
 volumes:
   db_data:

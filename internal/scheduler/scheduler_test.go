@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"database/sql"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -19,20 +18,12 @@ import (
 )
 
 type MockDBHandler struct {
-	MockGetDSNFromEnv func(path string) (string, error)
-	MockConnectOnly   func(dsn string) (*sql.DB, error)
+	MockConnectOnly func() (*sql.DB, error)
 }
 
-func (m *MockDBHandler) GetDSNFromEnv(path string) (string, error) {
-	if m.MockGetDSNFromEnv != nil {
-		return m.MockGetDSNFromEnv(path)
-	}
-	return "mock_user:mock_password@tcp(mock_db:3306)/testdb", nil
-}
-
-func (m *MockDBHandler) ConnectOnly(dsn string) (*sql.DB, error) {
+func (m *MockDBHandler) ConnectOnly() (*sql.DB, error) {
 	if m.MockConnectOnly != nil {
-		return m.MockConnectOnly(dsn)
+		return m.MockConnectOnly()
 	}
 	db, _, _ := sqlmock.New() // デフォルト動作
 	return db, nil
@@ -123,10 +114,7 @@ func TestGetMatchScheduletoday_Success(t *testing.T) {
 
 		//DSN取得とDB接続をモック化
 		connect = &MockDBHandler{
-			MockGetDSNFromEnv: func(path string) (string, error) {
-				return "mock dsn", nil
-			},
-			MockConnectOnly: func(dsn string) (*sql.DB, error) {
+			MockConnectOnly: func() (*sql.DB, error) {
 				db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
 				mock.ExpectExec(query).
 					WithArgs(todate, "Lions", "Giants", "beruna", "12:00", "test1/score", "Interleague").
@@ -205,36 +193,6 @@ func TestGetMatchScheduletoday_Errors(t *testing.T) {
 		assert.Contains(t, buf.String(), "failed to get body: failed to parse HTML")
 	})
 
-	t.Run("Error_GetDSN", func(t *testing.T) {
-		scraper = &MockURLHandler{
-			MockGetURL: func(url string) (*http.Response, error) {
-				return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader("mock html"))}, nil
-			},
-			MockGetBody: func(res *http.Response) (*goquery.Document, error) {
-				doc, _ := goquery.NewDocumentFromReader(strings.NewReader(`
-					<div class="bb-score">
-						<div class="bb-score__item">
-							<div class="bb-score__homeLogo">Lions</div>
-							<div class="bb-score__awayLogo">Giants</div>
-							<div class="bb-score__venue">beruna</div>
-							<div class="bb-score__status">試合前</div>
-							<div class="bb-score__link">12:00</div>
-							<div class="bb-score__content" href="test1/index"></div>
-						</div>
-					</div>`))
-				return doc, nil
-			},
-		}
-		connect = &MockDBHandler{
-			MockGetDSNFromEnv: func(path string) (string, error) {
-				return "mock dsn", fmt.Errorf("failed to load env file:")
-			},
-		}
-		GetMatchScheduletoday()
-
-		assert.Contains(t, buf.String(), "failed to load env file: ")
-	})
-
 	t.Run("Error_DBConnect", func(t *testing.T) {
 		scraper = &MockURLHandler{
 			MockGetURL: func(url string) (*http.Response, error) {
@@ -257,7 +215,7 @@ func TestGetMatchScheduletoday_Errors(t *testing.T) {
 		}
 
 		connect = &MockDBHandler{
-			MockConnectOnly: func(dsn string) (*sql.DB, error) {
+			MockConnectOnly: func() (*sql.DB, error) {
 				return nil, errors.New("failed to connect to DB")
 			},
 		}
@@ -289,7 +247,7 @@ func TestGetMatchScheduletoday_Errors(t *testing.T) {
 		}
 
 		connect = &MockDBHandler{
-			MockConnectOnly: func(dsn string) (*sql.DB, error) {
+			MockConnectOnly: func() (*sql.DB, error) {
 				db, mock, _ := sqlmock.New()
 				mock.ExpectExec(query).WillReturnError(errors.New("DB insert failed"))
 				return db, nil

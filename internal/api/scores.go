@@ -15,12 +15,7 @@ func GetScoreHandler(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 
 	//DB接続
-	dsn, err := connect.GetDSNFromEnv("/code/.env")
-	if err != nil {
-		http.Error(w, "Get dsn error", http.StatusInternalServerError)
-		return
-	}
-	db, err := connect.ConnectOnly(dsn)
+	db, err := connect.ConnectOnly()
 	if err != nil {
 		http.Error(w, "Database connection error", http.StatusInternalServerError)
 		return

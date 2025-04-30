@@ -5,6 +5,7 @@ import (
 	"baseball_report/internal/repository"
 	"baseball_report/utils"
 	"encoding/json"
+	"log"
 
 	"net/http"
 	"time"
@@ -16,15 +17,10 @@ var connect db.DBHandler = &db.DBService{}
 func GetMatchesHandler(w http.ResponseWriter, r *http.Request) {
 
 	todate := time.Now().Format("2006/01/02")
-	//DB接続
-	dsn, err := connect.GetDSNFromEnv("/code/.env")
-	if err != nil {
-		http.Error(w, "Get dsn error", http.StatusInternalServerError)
-		return
-	}
-	db, err := connect.ConnectOnly(dsn)
+	db, err := connect.ConnectOnly()
 	if err != nil {
 		http.Error(w, "Database connection error", http.StatusInternalServerError)
+		log.Println("Database connection error: " + err.Error())
 		return
 	}
 	defer db.Close()

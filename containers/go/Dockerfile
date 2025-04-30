@@ -1,13 +1,19 @@
 # Goのイメージを指定
 FROM golang:1.23-alpine
-# コンテナのワークディレクトリを指定
+
 WORKDIR /code
 
-# ソースコードをコンテナにコピー
-COPY . /code/
-COPY ../../entrypoint.sh /entrypoint.sh
+# go.mod と go.sum を先にコピー（これが超重要！）
+COPY go.mod go.sum ./
+RUN go mod download
 
-#entrypoint.shに実行権限を付与
-RUN chmod +x entrypoint.sh
+# 全コードをコピー
+COPY . .
 
+RUN go build -o main ./cmd
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 8080
 ENTRYPOINT ["/entrypoint.sh"]

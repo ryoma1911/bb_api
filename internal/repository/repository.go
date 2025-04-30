@@ -60,44 +60,6 @@ func (d *DefaultRepository) GetMatch(db *sql.DB, query string) ([]map[string]int
 
 }
 
-// スコア情報を取得
-func (d *DefaultRepository) GetScore(db *sql.DB, id string) ([]map[string]interface{}, error) {
-	query := "SELECT id, home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='" + id + "'"
-	rows, err := db.Query(query)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch match: %w", err)
-	}
-	defer rows.Close()
-
-	var score []map[string]interface{} //空のスライスを定義
-	for rows.Next() {
-		var id int
-		var home_score string
-		var away_score string
-		var batter string
-		var inning string
-		var result string
-		var match_id int
-
-		if err := rows.Scan(&id, &home_score, &away_score, &batter, &inning, &result, &match_id); err != nil {
-			return nil, fmt.Errorf("failed to scan match row: %w", err)
-		}
-		//試合情報をマップに格納、スライスに追加
-		score = append(score, map[string]interface{}{
-			"id":         id,
-			"home_score": home_score,
-			"away_score": away_score,
-			"batter":     batter,
-			"inning":     inning,
-			"result":     result,
-			"match_id":   match_id,
-		})
-
-	}
-	return score, nil
-
-}
-
 // 試合情報API出力
 func (d *DefaultRepository) GetMatchAPI(db *sql.DB, todate string) ([]map[string]interface{}, error) {
 	query := "SELECT id, date, home, away, league, stadium, starttime FROM matches WHERE date ='" + todate + "'"
@@ -132,5 +94,41 @@ func (d *DefaultRepository) GetMatchAPI(db *sql.DB, todate string) ([]map[string
 
 	}
 	return matches, nil
+
+}
+
+// スコア情報を取得
+func (d *DefaultRepository) GetScore(db *sql.DB, id string) ([]map[string]interface{}, error) {
+	query := "SELECT home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='" + id + "'"
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch match: %w", err)
+	}
+	defer rows.Close()
+
+	var score []map[string]interface{} //空のスライスを定義
+	for rows.Next() {
+		var match_id int
+		var home_score string
+		var away_score string
+		var batter string
+		var inning string
+		var result string
+
+		if err := rows.Scan(&home_score, &away_score, &batter, &inning, &result, &match_id); err != nil {
+			return nil, fmt.Errorf("failed to scan match row: %w", err)
+		}
+		//試合情報をマップに格納、スライスに追加
+		score = append(score, map[string]interface{}{
+			"match_id":   match_id,
+			"home_score": home_score,
+			"away_score": away_score,
+			"batter":     batter,
+			"inning":     inning,
+			"result":     result,
+		})
+
+	}
+	return score, nil
 
 }

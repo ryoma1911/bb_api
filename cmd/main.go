@@ -14,14 +14,26 @@ func Run() error {
 
 	//スケジューラ起動
 	c := cron.New()
-	go scheduler.StartDailyFetch(c)
-	c.Start()
+
+	// スケジューラ登録
+	go func() {
+		id, err := scheduler.StartDailyFetch(c)
+		if err != nil {
+			log.Println("Failed to register cron job:", err)
+			return
+		}
+		// スケジューラ開始
+		c.Start()
+
+		// 次回実行時刻を取得してログに出力
+		entry := c.Entry(id)
+		log.Printf("Cron job registered! Next scheduled run: %s (JST)", entry.Next)
+	}()
 
 	//APIルータを取得しサーバ起動
 	router := api.SetupRouter()
-	log.Println("API Server running at http://localhost:8080")
+	log.Println("API Server running")
 	log.Println("Now time is: ", time.Now())
-	log.Fatal(http.ListenAndServe(":8080", router))
 
 	return http.ListenAndServe(":8080", router)
 }

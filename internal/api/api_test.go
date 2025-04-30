@@ -15,20 +15,12 @@ import (
 )
 
 type MockDBHandler struct {
-	MockGetDSNFromEnv func(path string) (string, error)
-	MockConnectOnly   func(dsn string) (*sql.DB, error)
+	MockConnectOnly func() (*sql.DB, error)
 }
 
-func (m *MockDBHandler) GetDSNFromEnv(path string) (string, error) {
-	if m.MockGetDSNFromEnv != nil {
-		return m.MockGetDSNFromEnv(path)
-	}
-	return "mock_user:mock_password@tcp(mock_db:3306)/testdb", nil
-}
-
-func (m *MockDBHandler) ConnectOnly(dsn string) (*sql.DB, error) {
+func (m *MockDBHandler) ConnectOnly() (*sql.DB, error) {
 	if m.MockConnectOnly != nil {
-		return m.MockConnectOnly(dsn)
+		return m.MockConnectOnly()
 	}
 	db, _, _ := sqlmock.New() // デフォルト動作
 	return db, nil
@@ -42,10 +34,7 @@ func TestGetMatchesHandler_Success(t *testing.T) {
 		query := "SELECT id, date, home, away, league, stadium, starttime FROM matches WHERE date ='" + todate + "'"
 
 		connect = &MockDBHandler{
-			MockGetDSNFromEnv: func(path string) (string, error) {
-				return "mock dsn", nil
-			},
-			MockConnectOnly: func(dsn string) (*sql.DB, error) {
+			MockConnectOnly: func() (*sql.DB, error) {
 				db, mock, _ := sqlmock.New()
 				rows := sqlmock.NewRows([]string{"id", "date", "home", "away", "league", "stadium", "starttime"}).
 					AddRow(1, todate, "Yankees", "Red Sox", "セ・リーグ", "Yankee Stadium", "19:00").
@@ -101,10 +90,7 @@ func TestGetMatchesHandler_Success(t *testing.T) {
 		query := "SELECT id, date, home, away, league, stadium, starttime FROM matches WHERE date ='" + todate + "'"
 
 		connect = &MockDBHandler{
-			MockGetDSNFromEnv: func(path string) (string, error) {
-				return "mock dsn", nil
-			},
-			MockConnectOnly: func(dsn string) (*sql.DB, error) {
+			MockConnectOnly: func() (*sql.DB, error) {
 				db, mock, _ := sqlmock.New()
 				rows := sqlmock.NewRows([]string{"id", "date", "home", "away", "league", "stadium", "starttime"}).
 					AddRow(1, todate, "Yankees", "Red Sox", "セ・リーグ", "Yankee Stadium", "19:00").
@@ -184,10 +170,7 @@ func TestGetMatchesHandler_Success(t *testing.T) {
 		query := "SELECT id, date, home, away, league, stadium, starttime FROM matches WHERE date ='" + todate + "'"
 
 		connect = &MockDBHandler{
-			MockGetDSNFromEnv: func(path string) (string, error) {
-				return "mock dsn", nil
-			},
-			MockConnectOnly: func(dsn string) (*sql.DB, error) {
+			MockConnectOnly: func() (*sql.DB, error) {
 				db, mock, _ := sqlmock.New()
 				rows := sqlmock.NewRows([]string{"id", "date", "home", "away", "league", "stadium", "starttime"})
 				mock.ExpectQuery(query).WillReturnRows(rows)
@@ -219,32 +202,11 @@ func TestGetMatchesHandler_Success(t *testing.T) {
 
 // GetMatchesHandler:エラー系のパターン
 func TestGetMatchesHandler_Failes(t *testing.T) {
-	// DSN取得失敗
-	t.Run("Failed to get DSN", func(t *testing.T) {
-		connect = &MockDBHandler{
-			MockGetDSNFromEnv: func(_ string) (string, error) {
-				return "", errors.New("DSN取得失敗")
-			},
-			MockConnectOnly: nil,
-		}
-
-		req, _ := http.NewRequest("GET", "/matches", nil)
-		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(GetMatchesHandler)
-
-		handler.ServeHTTP(rr, req)
-
-		assert.Equal(t, http.StatusInternalServerError, rr.Code)
-		assert.Contains(t, rr.Body.String(), "Get dsn error")
-	})
 
 	// DB接続失敗
 	t.Run("Failed to connect DB", func(t *testing.T) {
 		connect = &MockDBHandler{
-			MockGetDSNFromEnv: func(_ string) (string, error) {
-				return "mock_dsn", nil
-			},
-			MockConnectOnly: func(_ string) (*sql.DB, error) {
+			MockConnectOnly: func() (*sql.DB, error) {
 				return nil, errors.New("DB接続エラー")
 			},
 		}
@@ -265,10 +227,7 @@ func TestGetMatchesHandler_Failes(t *testing.T) {
 		query := "SELECT id, date, home, away, league, stadium, starttime FROM matches WHERE date ='" + todate + "'"
 
 		connect = &MockDBHandler{
-			MockGetDSNFromEnv: func(_ string) (string, error) {
-				return "mock_dsn", nil
-			},
-			MockConnectOnly: func(_ string) (*sql.DB, error) {
+			MockConnectOnly: func() (*sql.DB, error) {
 				db, mock, _ := sqlmock.New()
 				mock.ExpectQuery(query).WillReturnError(errors.New("クエリエラー"))
 				return db, nil
@@ -295,10 +254,7 @@ func TestSetupRouter_Success(t *testing.T) {
 		query := "SELECT id, date, home, away, league, stadium, starttime FROM matches WHERE date ='" + todate + "'"
 
 		connect = &MockDBHandler{
-			MockGetDSNFromEnv: func(path string) (string, error) {
-				return "mock dsn", nil
-			},
-			MockConnectOnly: func(dsn string) (*sql.DB, error) {
+			MockConnectOnly: func() (*sql.DB, error) {
 				db, mock, _ := sqlmock.New()
 				rows := sqlmock.NewRows([]string{"id", "date", "home", "away", "league", "stadium", "starttime"}).
 					AddRow(1, todate, "Yankees", "Red Sox", "セ・リーグ", "Yankee Stadium", "19:00").
@@ -325,10 +281,7 @@ func TestSetupRouter_Success(t *testing.T) {
 		query := "SELECT id, home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='7'"
 
 		connect = &MockDBHandler{
-			MockGetDSNFromEnv: func(path string) (string, error) {
-				return "mock dsn", nil
-			},
-			MockConnectOnly: func(dsn string) (*sql.DB, error) {
+			MockConnectOnly: func() (*sql.DB, error) {
 				db, mock, _ := sqlmock.New()
 				rows := sqlmock.NewRows([]string{"id", "home_score", "away_score", "batter", "inning", "result", "match_id"}).
 					AddRow(1, "2", "1", "山田", "3回裏", "ホームラン", 7)
@@ -372,10 +325,7 @@ func TestGetScoreHandler_Success(t *testing.T) {
 		query := "SELECT id, home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='7'"
 
 		connect = &MockDBHandler{
-			MockGetDSNFromEnv: func(path string) (string, error) {
-				return "mock dsn", nil
-			},
-			MockConnectOnly: func(dsn string) (*sql.DB, error) {
+			MockConnectOnly: func() (*sql.DB, error) {
 				db, mock, _ := sqlmock.New()
 				rows := sqlmock.NewRows([]string{"id", "home_score", "away_score", "batter", "inning", "result", "match_id"}).
 					AddRow(1, "2", "1", "山田", "3回裏", "ホームラン", 7)
@@ -418,10 +368,7 @@ func TestGetScoreHandler_Success(t *testing.T) {
 		query := "SELECT id, home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='7'"
 
 		connect = &MockDBHandler{
-			MockGetDSNFromEnv: func(path string) (string, error) {
-				return "mock dsn", nil
-			},
-			MockConnectOnly: func(dsn string) (*sql.DB, error) {
+			MockConnectOnly: func() (*sql.DB, error) {
 				db, mock, _ := sqlmock.New()
 				rows := sqlmock.NewRows([]string{"id", "home_score", "away_score", "batter", "inning", "result", "match_id"})
 
@@ -453,32 +400,10 @@ func TestGetScoreHandler_Success(t *testing.T) {
 
 // GetMatchesHandler:エラー系のパターン
 func TestGetScoreHandler_Failes(t *testing.T) {
-	// DSN取得失敗
-	t.Run("Failed to get DSN", func(t *testing.T) {
-		connect = &MockDBHandler{
-			MockGetDSNFromEnv: func(_ string) (string, error) {
-				return "", errors.New("DSN取得失敗")
-			},
-			MockConnectOnly: nil,
-		}
-
-		req, _ := http.NewRequest("GET", "/scores/7", nil)
-		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(GetScoreHandler)
-
-		handler.ServeHTTP(rr, req)
-
-		assert.Equal(t, http.StatusInternalServerError, rr.Code)
-		assert.Contains(t, rr.Body.String(), "Get dsn error")
-	})
-
 	// DB接続失敗
 	t.Run("Failed to connect DB", func(t *testing.T) {
 		connect = &MockDBHandler{
-			MockGetDSNFromEnv: func(_ string) (string, error) {
-				return "mock_dsn", nil
-			},
-			MockConnectOnly: func(_ string) (*sql.DB, error) {
+			MockConnectOnly: func() (*sql.DB, error) {
 				return nil, errors.New("DB接続エラー")
 			},
 		}
@@ -499,10 +424,7 @@ func TestGetScoreHandler_Failes(t *testing.T) {
 		query := "SELECT id, date, home, away, league, stadium, starttime FROM matches WHERE date ='" + todate + "'"
 
 		connect = &MockDBHandler{
-			MockGetDSNFromEnv: func(_ string) (string, error) {
-				return "mock_dsn", nil
-			},
-			MockConnectOnly: func(_ string) (*sql.DB, error) {
+			MockConnectOnly: func() (*sql.DB, error) {
 				db, mock, _ := sqlmock.New()
 				mock.ExpectQuery(query).WillReturnError(errors.New("クエリエラー"))
 				return db, nil

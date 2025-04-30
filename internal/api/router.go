@@ -19,5 +19,10 @@ func SetupRouter() *mux.Router {
 		w.Write([]byte("OK"))
 	}).Methods("GET")
 
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
+	
 	return r
 }

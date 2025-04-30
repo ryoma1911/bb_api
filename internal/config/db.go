@@ -7,26 +7,18 @@ import (
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/joho/godotenv"
 )
 
 // DBHandler インターフェースで関数を抽象化
 type DBHandler interface {
-	GetDSNFromEnv(file string) (string, error)
-	ConnectOnly(dsn string) (*sql.DB, error)
+	ConnectOnly() (*sql.DB, error)
 }
 
 // DBService デフォルトの実装
 type DBService struct{}
 
 // DSNを.envから読み取って生成
-func (d *DBService) GetDSNFromEnv(file string) (string, error) {
-	// .envを読み込み
-	err := godotenv.Load(file)
-	if err != nil {
-		return "", fmt.Errorf("failed to load env file: %w", err)
-	}
-
+func getDSN() (string, error) {
 	// 環境変数からDB接続情報を取得
 	user := os.Getenv("MYSQL_USER")
 	password := os.Getenv("MYSQL_PASSWORD")
@@ -47,7 +39,12 @@ func checkconnect(db *sql.DB) (*sql.DB, error) {
 	return db, nil
 }
 
-func (d *DBService) ConnectOnly(dsn string) (*sql.DB, error) {
+func (d *DBService) ConnectOnly() (*sql.DB, error) {
+	//DB接続情報を取得
+	dsn, err := getDSN()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get dsn: %w", err)
+	}
 
 	//データベースのハンドルを取得
 	db, err := sql.Open("mysql", dsn)
