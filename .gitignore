@@ -5,4 +5,4 @@ go.sum
 .env.dev
 rest.http
 Infrastructure_design.md
-bb-api-prod/
+.copilot
