@@ -71,7 +71,14 @@ func TestStartDailyFetch_Success(t *testing.T) {
 // 正常系のパターン
 func TestGetMatchScheduletoday_Success(t *testing.T) {
 	todate := time.Now().Format("2006/01/02")
-	query := "INSERT INTO matches (date, home, away, stadium, starttime, link, league) VALUES (?, ?, ?, ?, ?, ?, ?)"
+	query_match := `
+	INSERT INTO matches (date, home, away, stadium, starttime, link, league) 
+	VALUES (?, ?, ?, ?, ?, ?, ?)
+	`
+	query_score := `
+	INSERT INTO scores (match_id)
+	VALUES (?)
+	`
 	// ログ出力のキャプチャ
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
@@ -116,12 +123,20 @@ func TestGetMatchScheduletoday_Success(t *testing.T) {
 		connect = &MockDBHandler{
 			MockConnectOnly: func() (*sql.DB, error) {
 				db, mock, _ := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherEqual))
-				mock.ExpectExec(query).
+				mock.ExpectExec(query_match).
 					WithArgs(todate, "Lions", "Giants", "beruna", "12:00", "test1/score", "Interleague").
 					WillReturnResult(sqlmock.NewResult(1, 1))
 
-				mock.ExpectExec(query).
+				mock.ExpectExec(query_match).
 					WithArgs(todate, "Fighters", "Hawks", "escon", "18:00", "test2/score", "Interleague").
+					WillReturnResult(sqlmock.NewResult(2, 2))
+
+				mock.ExpectExec(query_score).
+					WithArgs(1, "試合前").
+					WillReturnResult(sqlmock.NewResult(1, 1))
+
+				mock.ExpectExec(query_score).
+					WithArgs(2, "試合前").
 					WillReturnResult(sqlmock.NewResult(2, 2))
 
 				return db, nil
@@ -258,9 +273,4 @@ func TestGetMatchScheduletoday_Errors(t *testing.T) {
 
 		assert.Contains(t, buf.String(), "failed to insert:")
 	})
-}
-
-func Test(t *testing.T) {
-	c := cron.New()
-	StartDailyFetch(c)
 }

@@ -1,5 +1,5 @@
 # Goのイメージを指定
-FROM golang:1.23-alpine
+FROM --platform=linux/amd64 golang:1.23-alpine
 
 WORKDIR /code
 
@@ -14,6 +14,10 @@ RUN go build -o main ./cmd
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
+
+RUN apk add --no-cache tzdata
+ENV TZ="Asia/Tokyo"
+RUN echo $TZ > /etc/timezone
 
 EXPOSE 8080
 ENTRYPOINT ["/entrypoint.sh"]

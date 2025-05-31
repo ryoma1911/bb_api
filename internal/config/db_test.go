@@ -21,6 +21,7 @@ func TestConnectOnly(t *testing.T) {
 		assert.NotEmpty(t, os.Getenv("MYSQL_USER"))
 		assert.NotEmpty(t, os.Getenv("MYSQL_PASSWORD"))
 		assert.NotEmpty(t, os.Getenv("MYSQL_DATABASE"))
+		assert.NotEmpty(t, os.Getenv("MYSQL_HOST"))
 
 		db, err := connect.ConnectOnly()
 		assert.NoError(t, err)

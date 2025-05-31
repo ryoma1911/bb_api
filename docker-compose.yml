@@ -26,7 +26,7 @@ services:
       # ヘルスチェックが失敗しても無視する時間は30秒
       start_period: 30s
   app:
-    container_name: bb_api
+    container_name: bb_app
     build: 
       context: .
       dockerfile: containers/go/Dockerfile

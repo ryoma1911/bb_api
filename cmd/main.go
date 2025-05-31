@@ -13,7 +13,8 @@ import (
 func Run() error {
 
 	//スケジューラ起動
-	c := cron.New()
+	location, _ := time.LoadLocation("Asia/Tokyo")
+	c := cron.New(cron.WithLocation(location))
 
 	// スケジューラ登録
 	go func() {
@@ -28,6 +29,7 @@ func Run() error {
 		// 次回実行時刻を取得してログに出力
 		entry := c.Entry(id)
 		log.Printf("Cron job registered! Next scheduled run: %s (JST)", entry.Next)
+		select {}
 	}()
 
 	//APIルータを取得しサーバ起動
@@ -40,6 +42,7 @@ func Run() error {
 
 func main() {
 	if err := Run(); err != nil {
+
 		log.Fatal(err)
 	}
 }

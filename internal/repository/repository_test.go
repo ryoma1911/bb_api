@@ -25,8 +25,9 @@ func TestInsertData(t *testing.T) {
 			WithArgs("Yankees", "Red Sox", "5-3").
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
-		err := repo.InsertData(db, query, "Yankees", "Red Sox", "5-3")
+		id, err := repo.InsertData(db, query, "Yankees", "Red Sox", "5-3")
 		assert.NoError(t, err)
+		assert.Equal(t, id, 1)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
@@ -36,7 +37,7 @@ func TestInsertData(t *testing.T) {
 			WithArgs("Yankees", "Red Sox", "5-3").
 			WillReturnError(sql.ErrConnDone)
 
-		err := repo.InsertData(db, query, "Yankees", "Red Sox", "5-3")
+		_, err := repo.InsertData(db, query, "Yankees", "Red Sox", "5-3")
 		assert.Error(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -55,7 +56,7 @@ func TestInsertData(t *testing.T) {
 			WithArgs("2", "1", "山田", "3回裏", "ホームラン", 7).
 			WillReturnResult(sqlmock.NewResult(1, 2)) // INSERT or UPDATE
 
-		err := repo.InsertData(db, query, "2", "1", "山田", "3回裏", "ホームラン", 7)
+		_, err := repo.InsertData(db, query, "2", "1", "山田", "3回裏", "ホームラン", 7)
 		assert.NoError(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -74,7 +75,33 @@ func TestInsertData(t *testing.T) {
 			WithArgs("2", "1", "山田", "3回裏", "ホームラン", 7).
 			WillReturnError(sql.ErrConnDone)
 
-		err := repo.InsertData(db, query, "2", "1", "山田", "3回裏", "ホームラン", 7)
+		_, err := repo.InsertData(db, query, "2", "1", "山田", "3回裏", "ホームラン", 7)
+		assert.Error(t, err)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("Success UPDATE", func(t *testing.T) {
+		query := `
+			UPDATE scores SET home_score = ?, away_score = ?, batter = ?, inning = ?, result = ? WHERE match_id = ?
+		`
+		mock.ExpectExec(query).
+			WithArgs("2", "2", "山田", "3回裏", "ホームラン", 7).
+			WillReturnResult(sqlmock.NewResult(1, 2)) // INSERT or UPDATE
+
+		_, err := repo.UpdateData(db, query, "2", "2", "山田", "3回裏", "ホームラン", 7)
+		assert.NoError(t, err)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("Failed UPSERT", func(t *testing.T) {
+		query := `
+			UPDATE scores SET home_score = ?, away_score = ?, batter = ?, inning = ?, result = ? WHERE match_id = ?
+		`
+		mock.ExpectExec(query).
+			WithArgs("2", "1", "山田", "3回裏", "ホームラン", 7).
+			WillReturnError(sql.ErrConnDone)
+
+		_, err := repo.UpdateData(db, query, "2", "1", "山田", "3回裏", "ホームラン", 7)
 		assert.Error(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -320,7 +347,7 @@ func TestGetScore(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	t.Run("Success to get score", func(t *testing.T) {
+	t.Run("Success to get score result=試合中", func(t *testing.T) {
 		matchID := "7"
 		query := "SELECT home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='" + matchID + "'"
 
@@ -340,6 +367,29 @@ func TestGetScore(t *testing.T) {
 				"batter":     "山田",
 				"inning":     "3回裏",
 				"result":     "ホームラン",
+			},
+		}
+
+		assert.Equal(t, expected, result)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("Success to get score result=試合前", func(t *testing.T) {
+		matchID := "7"
+		query := "SELECT home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='" + matchID + "'"
+
+		rows := sqlmock.NewRows([]string{"home_score", "away_score", "batter", "inning", "result", "match_id"}).
+			AddRow("0", "0", "テスト", "試合前", "試合前", 7)
+
+		mock.ExpectQuery(query).WillReturnRows(rows)
+
+		result, err := repo.GetScore(db, matchID)
+		assert.NoError(t, err)
+
+		expected := []map[string]interface{}{
+			{
+				"match_id": 7,
+				"result":   "試合前",
 			},
 		}
 

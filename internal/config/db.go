@@ -24,10 +24,17 @@ func getDSN() (string, error) {
 	password := os.Getenv("MYSQL_PASSWORD")
 	dbName := os.Getenv("MYSQL_DATABASE")
 
-	// DSNを生成
-	dsn := fmt.Sprintf("%s:%s@tcp(bb_db:3306)/%s", user, password, dbName)
+	host := os.Getenv("MYSQL_HOST")
+	if host == "bb_db" {
+		dsn := fmt.Sprintf("%s:%s@tcp(bb_db:3306)/%s", user, password, dbName)
+		fmt.Println(dsn)
+		return dsn, nil
+	}
 
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?charset=utf8mb4&parseTime=True&loc=Local", user, password, host, dbName)
+	fmt.Println(dsn)
 	return dsn, nil
+
 }
 
 func checkconnect(db *sql.DB) (*sql.DB, error) {

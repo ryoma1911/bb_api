@@ -2,7 +2,11 @@
 GRANT ALL PRIVILEGES ON *.* TO 'bbapi'@'%';
 FLUSH PRIVILEGES;
 
-DROP TABLE IF EXISTS matches;
+CREATE DATABASE IF NOT EXISTS bb_db
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_bin;
+
+USE bb_db;
 
 CREATE TABLE matches (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -12,17 +16,17 @@ CREATE TABLE matches (
     league VARCHAR(50) NOT NULL,
     stadium VARCHAR(100) NOT NULL,
     starttime TIME NOT NULL,
-    UNIQUE KEY link VARCHAR(255), -- 進捗ページのURL
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY link VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE scores (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    home_score VARCHAR(3),
-    away_score VARCHAR(3),
-    batter VARCHAR(30),
-    inning VARCHAR(30) DEFAULT '試合前',
-    result VARCHAR(100),
+    home_score VARCHAR(3) DEFAULT '0',
+    away_score VARCHAR(3) DEFAULT '0',
+    batter VARCHAR(30) DEFAULT 'No Batter',
+    inning VARCHAR(30) DEFAULT '0回表',
+    result VARCHAR(100) DEFAULT '試合前',
     match_id INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (match_id) REFERENCES matches(id)

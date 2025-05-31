@@ -8,18 +8,35 @@ import (
 // Repository インターフェース
 type Repository interface {
 	GetMatch(db *sql.DB, query string) ([]map[string]interface{}, error)
-	InsertData(db *sql.DB, query string, args ...interface{}) error
+	InsertData(db *sql.DB, query string, args ...interface{}) (int, error)
+	UpdateData(db *sql.DB, query string, args ...interface{}) (int, error)
 }
 
 // DefaultRepository 実装
 type DefaultRepository struct{}
 
-func (d *DefaultRepository) InsertData(db *sql.DB, query string, args ...interface{}) error {
-	_, err := db.Exec(query, args...)
+func (d *DefaultRepository) InsertData(db *sql.DB, query string, args ...interface{}) (int, error) {
+	result, err := db.Exec(query, args...)
 	if err != nil {
-		return fmt.Errorf("failed to insert: %w", err)
+		return 0, fmt.Errorf("failed to insert: %w", err)
 	}
-	return nil
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get last insert id: %w", err)
+	}
+	return int(id), nil
+}
+
+func (d *DefaultRepository) UpdateData(db *sql.DB, query string, args ...interface{}) (int, error) {
+	result, err := db.Exec(query, args...)
+	if err != nil {
+		return 0, fmt.Errorf("failed to insert: %w", err)
+	}
+	id, err := result.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get last insert id: %w", err)
+	}
+	return int(id), nil
 }
 
 // バックエンド側でDB検索する際に使用
@@ -127,7 +144,6 @@ func (d *DefaultRepository) GetScore(db *sql.DB, id string) ([]map[string]interf
 			"inning":     inning,
 			"result":     result,
 		})
-
 	}
 	return score, nil
 
