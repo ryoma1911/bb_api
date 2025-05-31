@@ -5,6 +5,12 @@
 各試合の速報をREST APIを使用して取得できます。
 試合日程だけでなく試合中の進捗（両チームのスコア,打席の選手情報）も取得可能です。
 
+## URL
+リリースしました！
+現在、当日の試合情報取得まで可能です！
+
+http://bbapi--Publi-w0ffgkiFUQZ6-1036342013.ap-northeast-1.elb.amazonaws.com
+
 ## 📘 API仕様
 ### 1. GET /matches
 - **説明**: 当日の試合情報を取得
