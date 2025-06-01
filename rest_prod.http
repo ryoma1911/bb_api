@@ -1,2 +1,0 @@
-GET http://bbapi--Publi-w0ffgkiFUQZ6-1036342013.ap-northeast-1.elb.amazonaws.com/matches HTTP/1.1
-Content-Type: application/json

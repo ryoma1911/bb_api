@@ -6,3 +6,6 @@ go.sum
 rest.http
 Infrastructure_design.md
 copilot
+rest_local.http
+rest_prod.http
+
