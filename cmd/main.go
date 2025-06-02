@@ -28,7 +28,19 @@ func Run() error {
 
 		// 次回実行時刻を取得してログに出力
 		entry := c.Entry(id)
-		log.Printf("Cron job registered! Next scheduled run: %s (JST)", entry.Next)
+		log.Printf("Cron job registered! Next scheduled run Getmatchschedule: %s (JST)", entry.Next)
+
+		id, err = scheduler.StartMinutesFetch(c)
+		if err != nil {
+			log.Println("Failed to register cron job:", err)
+			return
+		}
+		// スケジューラ開始
+		c.Start()
+
+		// 次回実行時刻を取得してログに出力
+		entry = c.Entry(id)
+		log.Printf("Cron job registered! Next scheduled run GetScore: %s (JST)", entry.Next)
 		select {}
 	}()
 

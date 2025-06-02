@@ -31,9 +31,8 @@ func GetScoreHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer db.Close()
-
+	//結果を返却
 	if len(score) != 0 {
-		//結果を返却
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(score)
 	} else {

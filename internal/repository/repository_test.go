@@ -388,8 +388,12 @@ func TestGetScore(t *testing.T) {
 
 		expected := []map[string]interface{}{
 			{
-				"match_id": 7,
-				"result":   "試合前",
+				"match_id":   7,
+				"home_score": "0",
+				"away_score": "0",
+				"batter":     "テスト",
+				"inning":     "試合前",
+				"result":     "試合前",
 			},
 		}
 
@@ -406,6 +410,129 @@ func TestGetScore(t *testing.T) {
 		result, err := repo.GetScore(db, matchID)
 		assert.Error(t, err)
 		assert.Nil(t, result)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+}
+
+func TestGetMatchScoreLive(t *testing.T) {
+	repo := &DefaultRepository{}
+
+	// sqlmockの準備
+	db, mock, err := sqlmock.New()
+	assert.NoError(t, err)
+	defer db.Close()
+
+	// 日付・開始時刻
+	today := time.Date(2025, 6, 1, 0, 0, 0, 0, time.UTC).Format("2006-01-02")
+	startTime := time.Date(2025, 6, 1, 13, 5, 0, 0, time.UTC).Format("15:04:05")
+
+	t.Run("Success to get ongoing matches", func(t *testing.T) {
+		query := `
+			SELECT 
+				m.id, 
+				m.date, 
+				m.home, 
+				m.away, 
+				m.league, 
+				m.stadium, 
+				m.starttime,
+				m.link,
+				s.result 
+			FROM 
+				matches m
+			LEFT JOIN 
+				scores s ON m.id = s.match_id
+			WHERE 
+				m.date = \? AND
+    			m.starttime <= \? AND
+				s.result <> '試合終了' OR
+				s.result <> '試合中止'`
+
+		rows := sqlmock.NewRows([]string{
+			"id", "date", "home", "away", "league", "stadium", "starttime", "link", "result",
+		}).AddRow(1, "2025-06-01", "チームA", "チームB", "セリーグ", "東京ドーム", "13:00", "http://example.com", "試合中")
+
+		mock.ExpectQuery(query).WithArgs(today, startTime).WillReturnRows(rows)
+
+		results, err := repo.GetMatchScoreLive(db, today, startTime)
+		assert.NoError(t, err)
+
+		expected := []map[string]interface{}{
+			{
+				"id":        1,
+				"date":      "2025-06-01",
+				"home":      "チームA",
+				"away":      "チームB",
+				"league":    "セリーグ",
+				"stadium":   "東京ドーム",
+				"starttime": "13:00",
+				"link":      "http://example.com",
+				"result":    "試合中",
+			},
+		}
+		assert.Equal(t, expected, results)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("Success with no results", func(t *testing.T) {
+		query := `
+			SELECT 
+				m.id, 
+				m.date, 
+				m.home, 
+				m.away, 
+				m.league, 
+				m.stadium, 
+				m.starttime,
+				m.link,
+				s.result 
+			FROM 
+				matches m
+			LEFT JOIN 
+				scores s ON m.id = s.match_id
+			WHERE 
+				m.date = \? AND
+    			m.starttime <= \? AND
+				s.result <> '試合終了' OR
+				s.result <> '試合中止'`
+
+		mock.ExpectQuery(query).WithArgs(today, startTime).WillReturnRows(sqlmock.NewRows([]string{
+			"id", "date", "home", "away", "league", "stadium", "starttime", "link", "result",
+		}))
+
+		results, err := repo.GetMatchScoreLive(db, today, startTime)
+		assert.NoError(t, err)
+		assert.Nil(t, results)
+		assert.NoError(t, mock.ExpectationsWereMet())
+	})
+
+	t.Run("Fail to query", func(t *testing.T) {
+		query := `
+			SELECT 
+				m.id, 
+				m.date, 
+				m.home, 
+				m.away, 
+				m.league, 
+				m.stadium, 
+				m.starttime,
+				m.link,
+				s.result 
+			FROM 
+				matches m
+			LEFT JOIN 
+				scores s ON m.id = s.match_id
+			WHERE 
+				m.date = \? AND
+    			m.starttime <= \? AND
+				s.result <> '試合終了' OR
+				s.result <> '試合中止'`
+
+		mock.ExpectQuery(query).WithArgs(today, startTime).WillReturnError(sql.ErrConnDone)
+
+		results, err := repo.GetMatchScoreLive(db, today, startTime)
+		assert.Error(t, err)
+		assert.Nil(t, results)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 }

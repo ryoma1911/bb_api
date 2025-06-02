@@ -278,13 +278,13 @@ func TestSetupRouter_Success(t *testing.T) {
 	})
 
 	t.Run("GET /scores returns score data", func(t *testing.T) {
-		query := "SELECT id, home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='7'"
+		query := "SELECT home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='7'"
 
 		connect = &MockDBHandler{
 			MockConnectOnly: func() (*sql.DB, error) {
 				db, mock, _ := sqlmock.New()
-				rows := sqlmock.NewRows([]string{"id", "home_score", "away_score", "batter", "inning", "result", "match_id"}).
-					AddRow(1, "2", "1", "山田", "3回裏", "ホームラン", 7)
+				rows := sqlmock.NewRows([]string{"home_score", "away_score", "batter", "inning", "result", "match_id"}).
+					AddRow("2", "1", "山田", "3回裏", "ホームラン", 7)
 
 				mock.ExpectQuery(query).WillReturnRows(rows)
 				return db, nil
@@ -322,13 +322,13 @@ func TestSetupRouter_Success(t *testing.T) {
 func TestGetScoreHandler_Success(t *testing.T) {
 	// 取得成功
 	t.Run("Success get score", func(t *testing.T) {
-		query := "SELECT id, home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='7'"
+		query := "SELECT home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='7'"
 
 		connect = &MockDBHandler{
 			MockConnectOnly: func() (*sql.DB, error) {
 				db, mock, _ := sqlmock.New()
-				rows := sqlmock.NewRows([]string{"id", "home_score", "away_score", "batter", "inning", "result", "match_id"}).
-					AddRow(1, "2", "1", "山田", "3回裏", "ホームラン", 7)
+				rows := sqlmock.NewRows([]string{"home_score", "away_score", "batter", "inning", "result", "match_id"}).
+					AddRow("2", "1", "山田", "3回裏", "ホームラン", 7)
 
 				mock.ExpectQuery(query).WillReturnRows(rows)
 				return db, nil
@@ -338,7 +338,6 @@ func TestGetScoreHandler_Success(t *testing.T) {
 		//期待値を設定
 		expected := `[
 				{
-					"id": 1,
 					"home_score": "2",
 					"away_score": "1",
 					"batter": "山田",
@@ -365,12 +364,12 @@ func TestGetScoreHandler_Success(t *testing.T) {
 	})
 
 	t.Run("Success no score", func(t *testing.T) {
-		query := "SELECT id, home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='7'"
+		query := "SELECT home_score, away_score, batter, inning, result, match_id FROM scores WHERE match_id ='7'"
 
 		connect = &MockDBHandler{
 			MockConnectOnly: func() (*sql.DB, error) {
 				db, mock, _ := sqlmock.New()
-				rows := sqlmock.NewRows([]string{"id", "home_score", "away_score", "batter", "inning", "result", "match_id"})
+				rows := sqlmock.NewRows([]string{"home_score", "away_score", "batter", "inning", "result", "match_id"})
 
 				mock.ExpectQuery(query).WillReturnRows(rows)
 				return db, nil

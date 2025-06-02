@@ -10,6 +10,7 @@ type Repository interface {
 	GetMatch(db *sql.DB, query string) ([]map[string]interface{}, error)
 	InsertData(db *sql.DB, query string, args ...interface{}) (int, error)
 	UpdateData(db *sql.DB, query string, args ...interface{}) (int, error)
+	GetMatchScoreLive(db *sql.DB, todate string, starttime string) ([]map[string]interface{}, error)
 }
 
 // DefaultRepository 実装
@@ -146,5 +147,65 @@ func (d *DefaultRepository) GetScore(db *sql.DB, id string) ([]map[string]interf
 		})
 	}
 	return score, nil
+
+}
+
+// スコア情報を取得
+func (d *DefaultRepository) GetMatchScoreLive(db *sql.DB, todate string, starttime string) ([]map[string]interface{}, error) {
+	query := `
+			SELECT 
+				m.id, 
+				m.date, 
+				m.home, 
+				m.away, 
+				m.league, 
+				m.stadium, 
+				m.starttime,
+				m.link,
+				s.inning
+			FROM 
+				matches m
+			LEFT JOIN 
+				scores s ON m.id = s.match_id
+			WHERE 
+				m.date = ? AND
+				m.starttime <= ? AND
+				(s.inning <> '試合終了' AND s.inning <> '試合中止')
+			`
+	rows, err := db.Query(query, todate, starttime)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch match: %w", err)
+	}
+	defer rows.Close()
+
+	var matches []map[string]interface{} //空のスライスを定義
+	for rows.Next() {
+		var id int
+		var date string
+		var home string
+		var away string
+		var league string
+		var stadium string
+		var starttime string
+		var link string
+		var result string
+		if err := rows.Scan(&id, &date, &home, &away, &league, &stadium, &starttime, &link, &result); err != nil {
+			return nil, fmt.Errorf("failed to scan match row: %w", err)
+		}
+		//試合情報をマップに格納、スライスに追加
+		matches = append(matches, map[string]interface{}{
+			"id":        id,
+			"date":      date,
+			"home":      home,
+			"away":      away,
+			"league":    league,
+			"stadium":   stadium,
+			"starttime": starttime,
+			"link":      link,
+			"result":    result,
+		})
+
+	}
+	return matches, nil
 
 }
