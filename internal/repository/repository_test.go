@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"regexp"
 	"testing"
 	"time"
 
@@ -437,22 +438,21 @@ func TestGetMatchScoreLive(t *testing.T) {
 				m.stadium, 
 				m.starttime,
 				m.link,
-				s.result 
+				s.inning
 			FROM 
 				matches m
 			LEFT JOIN 
 				scores s ON m.id = s.match_id
 			WHERE 
-				m.date = \? AND
-    			m.starttime <= \? AND
-				s.result <> '試合終了' OR
-				s.result <> '試合中止'`
-
+				m.date = ? AND
+				m.starttime <= ? AND
+				(s.inning <> '試合終了' AND s.inning <> '試合中止')
+			`
 		rows := sqlmock.NewRows([]string{
 			"id", "date", "home", "away", "league", "stadium", "starttime", "link", "result",
-		}).AddRow(1, "2025-06-01", "チームA", "チームB", "セリーグ", "東京ドーム", "13:00", "http://example.com", "試合中")
+		}).AddRow(1, "2025-06-01", "チームA", "チームB", "セリーグ", "東京ドーム", "13:00:00", "http://example.com", "試合中")
 
-		mock.ExpectQuery(query).WithArgs(today, startTime).WillReturnRows(rows)
+		mock.ExpectQuery(regexp.QuoteMeta(query)).WithArgs(today, startTime).WillReturnRows(rows)
 
 		results, err := repo.GetMatchScoreLive(db, today, startTime)
 		assert.NoError(t, err)
@@ -465,7 +465,7 @@ func TestGetMatchScoreLive(t *testing.T) {
 				"away":      "チームB",
 				"league":    "セリーグ",
 				"stadium":   "東京ドーム",
-				"starttime": "13:00",
+				"starttime": "13:00:00",
 				"link":      "http://example.com",
 				"result":    "試合中",
 			},
@@ -485,18 +485,18 @@ func TestGetMatchScoreLive(t *testing.T) {
 				m.stadium, 
 				m.starttime,
 				m.link,
-				s.result 
+				s.inning
 			FROM 
 				matches m
 			LEFT JOIN 
 				scores s ON m.id = s.match_id
 			WHERE 
-				m.date = \? AND
-    			m.starttime <= \? AND
-				s.result <> '試合終了' OR
-				s.result <> '試合中止'`
+				m.date = ? AND
+				m.starttime <= ? AND
+				(s.inning <> '試合終了' AND s.inning <> '試合中止')
+			`
 
-		mock.ExpectQuery(query).WithArgs(today, startTime).WillReturnRows(sqlmock.NewRows([]string{
+		mock.ExpectQuery(regexp.QuoteMeta(query)).WithArgs(today, startTime).WillReturnRows(sqlmock.NewRows([]string{
 			"id", "date", "home", "away", "league", "stadium", "starttime", "link", "result",
 		}))
 
@@ -517,18 +517,18 @@ func TestGetMatchScoreLive(t *testing.T) {
 				m.stadium, 
 				m.starttime,
 				m.link,
-				s.result 
+				s.inning
 			FROM 
 				matches m
 			LEFT JOIN 
 				scores s ON m.id = s.match_id
 			WHERE 
-				m.date = \? AND
-    			m.starttime <= \? AND
-				s.result <> '試合終了' OR
-				s.result <> '試合中止'`
+				m.date = ? AND
+				m.starttime <= ? AND
+				(s.inning <> '試合終了' AND s.inning <> '試合中止')
+			`
 
-		mock.ExpectQuery(query).WithArgs(today, startTime).WillReturnError(sql.ErrConnDone)
+		mock.ExpectQuery(regexp.QuoteMeta(query)).WithArgs(today, startTime).WillReturnError(sql.ErrConnDone)
 
 		results, err := repo.GetMatchScoreLive(db, today, startTime)
 		assert.Error(t, err)

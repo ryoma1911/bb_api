@@ -11,7 +11,7 @@ import (
 )
 
 func StartMinutesFetch(c *cron.Cron) (cron.EntryID, error) {
-	id, err := c.AddFunc("* 6 * * *", func() {
+	id, err := c.AddFunc("* 12 * * *", func() {
 		defer func() {
 			if r := recover(); r != nil {
 				log.Println("panic recovered in cron task:", r)

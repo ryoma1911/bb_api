@@ -72,7 +72,7 @@ func TestGetmatchscoremock(t *testing.T) {
 	t.Run("Success get score", func(t *testing.T) {
 		//期待値を設定
 		expected := [][]string{
-			{"5回裏", "0", "2", "山田 太郎", "ヒットで1塁"},
+			{"5回裏", "2", "0", "山田 太郎", "ヒットで1塁"},
 		}
 		doc, _ := goquery.NewDocumentFromReader(strings.NewReader(inninghtml))
 		scoredata, err := GetMatchScore(doc)
@@ -87,7 +87,7 @@ func TestGetmatchscoremock(t *testing.T) {
 	t.Run("Success get endscore", func(t *testing.T) {
 		//期待値を設定
 		expected := [][]string{
-			{"9回裏", "0", "2", "", "試合終了"},
+			{"9回裏", "2", "0", "", "試合終了"},
 		}
 		doc, _ := goquery.NewDocumentFromReader(strings.NewReader(endhtml))
 		scoredata, err := GetMatchScore(doc)
@@ -109,7 +109,7 @@ func TestGetmatchscoreprod(t *testing.T) {
 
 		//期待値を設定
 		expected := [][]string{
-			{"9回表", "0", "2", "福永 奨", "二フライ\n            146km/h ストレート"},
+			{"9回表", "2", "0", "福永 奨", "二フライ\n            146km/h ストレート"},
 		}
 
 		//取得元のURLを定義
@@ -131,7 +131,7 @@ func TestGetmatchscoreprod(t *testing.T) {
 	t.Run("success get score to gameset", func(t *testing.T) {
 		//期待値を設定
 		expected := [][]string{
-			{"試合終了", "0", "2", "", "試合終了\n            3回戦：DeNA 2勝0敗1分"},
+			{"試合終了", "2", "0", "", "試合終了\n            3回戦：DeNA 2勝0敗1分"},
 		}
 
 		//取得元のURLを定義

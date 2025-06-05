@@ -19,7 +19,7 @@ var scraper utils.URLHandler = &utils.URLService{}
 
 // 日次スケジューラをここで設定
 func StartDailyFetch(c *cron.Cron) (cron.EntryID, error) {
-	id, err := c.AddFunc("30 0 * * *", func() {
+	id, err := c.AddFunc("01 0 * * *", func() {
 		defer func() {
 			if r := recover(); r != nil {
 				log.Println("panic recovered in cron task:", r)

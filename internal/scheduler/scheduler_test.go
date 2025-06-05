@@ -336,25 +336,25 @@ func TestGetscore(t *testing.T) {
 		starttime := time.Now().Format("15:04:05")
 
 		query_match := `
-	SELECT 
-		m.id, 
-		m.date, 
-		m.home, 
-		m.away, 
-		m.league, 
-		m.stadium, 
-		m.starttime,
-		m.link,
-		s.inning
-	FROM 
-		matches m
-	LEFT JOIN 
-		scores s ON m.id = s.match_id
-	WHERE 
-		m.date = ? AND
-		m.starttime <= ? AND
-		(s.inning <> '試合終了' AND s.inning <> '試合中止')
-	`
+					SELECT 
+						m.id, 
+						m.date, 
+						m.home, 
+						m.away, 
+						m.league, 
+						m.stadium, 
+						m.starttime,
+						m.link,
+						s.inning
+					FROM 
+						matches m
+					LEFT JOIN 
+						scores s ON m.id = s.match_id
+					WHERE 
+						m.date = ? AND
+						m.starttime <= ? AND
+						(s.inning <> '試合終了' AND s.inning <> '試合中止')
+					`
 
 		query_score := `
 	UPDATE scores SET home_score = ?, away_score = ?, batter = ?, inning = ?, result = ? WHERE match_id = ?
@@ -370,12 +370,12 @@ func TestGetscore(t *testing.T) {
 					WillReturnRows(sqlmock.NewRows([]string{
 						"id", "date", "home", "away", "league", "stadium", "starttime", "link", "inning",
 					}).AddRow(
-						1, todate, "Lions", "Giants", "Interleague", "beruna", "12:00", "test1/score", "試合前",
+						1, todate, "Lions", "Giants", "Interleague", "beruna", "12:00:00", "test1/score", "試合前",
 					))
 
 				// UPDATE クエリのモック
 				mock.ExpectExec(query_score).
-					WithArgs("1", "2", "山田", "2回裏", "左2塁打", "1"). // match["id"] は int → 文字列に変換されている
+					WithArgs("2", "1", "山田", "2回裏", "左2塁打", "1"). // match["id"] は int → 文字列に変換されている
 					WillReturnResult(sqlmock.NewResult(1, 1))
 
 				return db, nil
@@ -386,8 +386,9 @@ func TestGetscore(t *testing.T) {
 		err := GetScores()
 		assert.NoError(t, err)
 
-		assert.Contains(t, buf.String(), "Updated Score:")
+		assert.Contains(t, buf.String(), "Updated Score: 1 2 - 1")
 	})
+
 	t.Run("Error_GetURL", func(t *testing.T) {
 		scraper = &MockURLHandler{
 			MockGetURL: func(url string) (*http.Response, error) {
@@ -398,7 +399,7 @@ func TestGetscore(t *testing.T) {
 		err := GetScores()
 		assert.Error(t, err)
 
-		assert.Contains(t, buf.String(), "failed to get URL: failed to fetch URL")
+		assert.Contains(t, buf.String(), "failed to get URL:")
 	})
 
 	t.Run("Error_GetBody", func(t *testing.T) {
@@ -455,4 +456,8 @@ func TestGetscore(t *testing.T) {
 
 func TestGetscore2(t *testing.T) {
 	GetScores()
+}
+
+func TestGetmatches(t *testing.T) {
+	GetMatchScheduletoday()
 }

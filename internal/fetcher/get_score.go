@@ -27,7 +27,7 @@ func GetMatchScore(doc *goquery.Document) ([][]string, error) {
 	// 打者情報を取得
 	batter := utils.GetText(doc, "table#batt a")
 
-	scoreData = append(scoreData, []string{inning, teamscore[0], teamscore[1], batter, result})
+	scoreData = append(scoreData, []string{inning, teamscore[1], teamscore[0], batter, result})
 
 	return scoreData, nil
 }
