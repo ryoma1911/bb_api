@@ -333,7 +333,6 @@ func TestGetscore(t *testing.T) {
 		//DSN取得とDB接続をモック化
 		// 日付と時間を整形
 		todate := time.Now().Format("2006-01-02")
-		starttime := time.Now().Format("15:04:05")
 
 		query_match := `
 					SELECT 
@@ -351,8 +350,8 @@ func TestGetscore(t *testing.T) {
 					LEFT JOIN 
 						scores s ON m.id = s.match_id
 					WHERE 
-						m.date = ? AND
-						m.starttime <= ? AND
+						m.date = CURDATE() AND
+						m.starttime <= CURTIME() AND
 						(s.inning <> '試合終了' AND s.inning <> '試合中止')
 					`
 
@@ -366,7 +365,6 @@ func TestGetscore(t *testing.T) {
 
 				// SELECT クエリのモック
 				mock.ExpectQuery(query_match).
-					WithArgs(todate, starttime).
 					WillReturnRows(sqlmock.NewRows([]string{
 						"id", "date", "home", "away", "league", "stadium", "starttime", "link", "inning",
 					}).AddRow(

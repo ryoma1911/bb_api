@@ -10,7 +10,7 @@ type Repository interface {
 	GetMatch(db *sql.DB, query string) ([]map[string]interface{}, error)
 	InsertData(db *sql.DB, query string, args ...interface{}) (int, error)
 	UpdateData(db *sql.DB, query string, args ...interface{}) (int, error)
-	GetMatchScoreLive(db *sql.DB, todate string, starttime string) ([]map[string]interface{}, error)
+	GetMatchScoreLive(db *sql.DB) ([]map[string]interface{}, error)
 }
 
 // DefaultRepository 実装
@@ -151,7 +151,7 @@ func (d *DefaultRepository) GetScore(db *sql.DB, id string) ([]map[string]interf
 }
 
 // スコア情報を取得
-func (d *DefaultRepository) GetMatchScoreLive(db *sql.DB, todate string, starttime string) ([]map[string]interface{}, error) {
+func (d *DefaultRepository) GetMatchScoreLive(db *sql.DB) ([]map[string]interface{}, error) {
 	query := `
 			SELECT 
 				m.id, 
@@ -168,11 +168,11 @@ func (d *DefaultRepository) GetMatchScoreLive(db *sql.DB, todate string, startti
 			LEFT JOIN 
 				scores s ON m.id = s.match_id
 			WHERE 
-				m.date = ? AND
-				m.starttime <= ? AND
+				m.date = CURDATE() AND
+				m.starttime <= CURTIME() AND
 				(s.inning <> '試合終了' AND s.inning <> '試合中止')
 			`
-	rows, err := db.Query(query, todate, starttime)
+	rows, err := db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch match: %w", err)
 	}

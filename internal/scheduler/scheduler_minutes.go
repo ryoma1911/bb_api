@@ -40,11 +40,7 @@ func GetScores() error {
 	}
 
 	//開始中の試合情報を取得
-	current_time := time.Now()
-	starttime := current_time.Format("15:04:05")
-	todate := time.Now().Format("2006-01-02")
-
-	matches, err := repo.GetMatchScoreLive(db, todate, starttime)
+	matches, err := repo.GetMatchScoreLive(db)
 	if err != nil {
 		log.Println(fmt.Errorf("failed to get to match: %w", err))
 		return err
@@ -80,6 +76,8 @@ func GetScores() error {
 			return err
 		}
 		log.Println("Updated Score:", id, score[0][1], "-", score[0][2], score[0][3], score[0][0], score[0][4])
+		log.Println("Sleeping 10 second")
+		time.Sleep(10 * time.Second)
 	}
 	return nil
 }

@@ -423,10 +423,6 @@ func TestGetMatchScoreLive(t *testing.T) {
 	assert.NoError(t, err)
 	defer db.Close()
 
-	// 日付・開始時刻
-	today := time.Date(2025, 6, 1, 0, 0, 0, 0, time.UTC).Format("2006-01-02")
-	startTime := time.Date(2025, 6, 1, 13, 5, 0, 0, time.UTC).Format("15:04:05")
-
 	t.Run("Success to get ongoing matches", func(t *testing.T) {
 		query := `
 			SELECT 
@@ -444,17 +440,17 @@ func TestGetMatchScoreLive(t *testing.T) {
 			LEFT JOIN 
 				scores s ON m.id = s.match_id
 			WHERE 
-				m.date = ? AND
-				m.starttime <= ? AND
+				m.date = CURDATE() AND
+				m.starttime <= CURTIME() AND
 				(s.inning <> '試合終了' AND s.inning <> '試合中止')
 			`
 		rows := sqlmock.NewRows([]string{
-			"id", "date", "home", "away", "league", "stadium", "starttime", "link", "result",
-		}).AddRow(1, "2025-06-01", "チームA", "チームB", "セリーグ", "東京ドーム", "13:00:00", "http://example.com", "試合中")
+			"id", "date", "home", "away", "league", "stadium", "starttime", "link", "inning",
+		}).AddRow(1, "2025-06-09", "チームA", "チームB", "セリーグ", "東京ドーム", "22:00:00", "http://example.com", "試合中")
 
-		mock.ExpectQuery(regexp.QuoteMeta(query)).WithArgs(today, startTime).WillReturnRows(rows)
+		mock.ExpectQuery(regexp.QuoteMeta(query)).WillReturnRows(rows)
 
-		results, err := repo.GetMatchScoreLive(db, today, startTime)
+		results, err := repo.GetMatchScoreLive(db)
 		assert.NoError(t, err)
 
 		expected := []map[string]interface{}{
@@ -465,9 +461,9 @@ func TestGetMatchScoreLive(t *testing.T) {
 				"away":      "チームB",
 				"league":    "セリーグ",
 				"stadium":   "東京ドーム",
-				"starttime": "13:00:00",
+				"starttime": "18:05:00",
 				"link":      "http://example.com",
-				"result":    "試合中",
+				"inning":    "試合中",
 			},
 		}
 		assert.Equal(t, expected, results)
@@ -491,16 +487,16 @@ func TestGetMatchScoreLive(t *testing.T) {
 			LEFT JOIN 
 				scores s ON m.id = s.match_id
 			WHERE 
-				m.date = ? AND
-				m.starttime <= ? AND
+				m.date = CURDATE() AND
+				m.starttime <= CURTIME() AND
 				(s.inning <> '試合終了' AND s.inning <> '試合中止')
 			`
 
-		mock.ExpectQuery(regexp.QuoteMeta(query)).WithArgs(today, startTime).WillReturnRows(sqlmock.NewRows([]string{
-			"id", "date", "home", "away", "league", "stadium", "starttime", "link", "result",
+		mock.ExpectQuery(regexp.QuoteMeta(query)).WillReturnRows(sqlmock.NewRows([]string{
+			"id", "date", "home", "away", "league", "stadium", "starttime", "link", "inning",
 		}))
 
-		results, err := repo.GetMatchScoreLive(db, today, startTime)
+		results, err := repo.GetMatchScoreLive(db)
 		assert.NoError(t, err)
 		assert.Nil(t, results)
 		assert.NoError(t, mock.ExpectationsWereMet())
@@ -523,14 +519,14 @@ func TestGetMatchScoreLive(t *testing.T) {
 			LEFT JOIN 
 				scores s ON m.id = s.match_id
 			WHERE 
-				m.date = ? AND
-				m.starttime <= ? AND
+				m.date = CURDATE() AND
+				m.starttime <= CURTIME() AND
 				(s.inning <> '試合終了' AND s.inning <> '試合中止')
 			`
 
-		mock.ExpectQuery(regexp.QuoteMeta(query)).WithArgs(today, startTime).WillReturnError(sql.ErrConnDone)
+		mock.ExpectQuery(regexp.QuoteMeta(query)).WillReturnError(sql.ErrConnDone)
 
-		results, err := repo.GetMatchScoreLive(db, today, startTime)
+		results, err := repo.GetMatchScoreLive(db)
 		assert.Error(t, err)
 		assert.Nil(t, results)
 		assert.NoError(t, mock.ExpectationsWereMet())
